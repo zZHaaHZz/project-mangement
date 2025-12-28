@@ -1,36 +1,129 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Project Management System
 
-## Getting Started
+Frontend project using Next.js with json-server and json-server-auth for fake API.
 
-First, run the development server:
+## Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Next.js 16** - React framework
+- **TypeScript** - Type safety
+- **json-server** - Fake REST API
+- **json-server-auth** - Authentication middleware for json-server
+- **Tailwind CSS** - Styling
+
+## Project Structure
+
+```
+src/
+├── app/              # Next.js App Router pages
+│   ├── auth/        # Authentication pages
+│   ├── features/    # Feature pages
+│   └── page.tsx     # Home page
+├── components/       # Shared UI components
+│   ├── auth/        # Auth components
+│   └── layout/      # Layout components
+├── features/         # Feature modules (optional)
+├── lib/             # Utilities & API client
+│   └── api.ts       # API client for json-server
+├── models/          # TypeScript types/interfaces
+│   └── index.ts     # All type definitions
+└── contexts/        # React contexts
+    └── AuthContext.tsx  # Authentication context
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Install dependencies:**
+```bash
+npm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Start json-server (port 3001):**
+```bash
+npm run json-server
+```
 
-## Learn More
+3. **Start Next.js dev server (port 8080):**
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. **Or run both together:**
+```bash
+npm run dev:all
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API Endpoints
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+json-server runs on `http://localhost:3001`
 
-## Deploy on Vercel
+### Authentication
+- `POST /register` - Register new user
+- `POST /login` - Login user
+- `GET /users` - Get all users (requires auth)
+- `GET /users/:id` - Get user by ID
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Resources
+- `GET /projects` - Get all projects
+- `POST /projects` - Create project
+- `GET /projects/:id` - Get project by ID
+- `PATCH /projects/:id` - Update project
+- `DELETE /projects/:id` - Delete project
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `GET /tasks` - Get all tasks
+- `POST /tasks` - Create task
+- `GET /tasks/:id` - Get task by ID
+- `PATCH /tasks/:id` - Update task
+- `DELETE /tasks/:id` - Delete task
+
+- `GET /logworks` - Get all logworks
+- `POST /logworks` - Create logwork
+- `GET /logworks/:id` - Get logwork by ID
+- `PATCH /logworks/:id` - Update logwork
+- `DELETE /logworks/:id` - Delete logwork
+
+## Usage
+
+### Using API Client
+
+```typescript
+import { apiClient } from '@/lib/api';
+
+// Login
+await apiClient.login('user@example.com', 'password');
+
+// Get projects
+const projects = await apiClient.getProjects();
+
+// Create task
+const newTask = await apiClient.createTask({
+  title: 'New Task',
+  description: 'Task description',
+  status: 'todo',
+  projectId: 1,
+  userId: 1
+});
+```
+
+### Using Auth Context
+
+```typescript
+'use client';
+import { useAuth } from '@/contexts/AuthContext';
+
+export default function MyComponent() {
+  const { user, login, logout, isAuthenticated } = useAuth();
+  
+  // Use auth state and methods
+}
+```
+
+## Database
+
+The `db.json` file contains the initial data for json-server. It will be automatically updated when you create/update/delete resources.
+
+## Notes
+
+- json-server-auth automatically hashes passwords
+- Token is stored in localStorage
+- API client automatically includes Authorization header when token exists
+- All API calls are typed with TypeScript interfaces in `src/models/`

@@ -1,0 +1,36 @@
+{
+  "users": [],
+  "projects": [
+    {
+      "id": 1,
+      "name": "Project 1",
+      "description": "First project",
+      "status": "active",
+      "userId": 1,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Task 1",
+      "description": "First task",
+      "status": "todo",
+      "projectId": 1,
+      "userId": 1,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "logworks": [
+    {
+      "id": 1,
+      "taskId": 1,
+      "userId": 1,
+      "hours": 2,
+      "description": "Worked on task",
+      "date": "2024-01-01",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+
