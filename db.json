@@ -1,5 +1,27 @@
 {
-  "users": [],
+  "users": [
+    {
+      "email": "leader@gmail.com",
+      "password": "$2a$10$Jn1yQGE7sPOITjmfO8XFUuEhadd.O6Y29sxXcgEcDO/lvbb4OX7/O",
+      "name": "Leader",
+      "role": "leader",
+      "id": 1
+    },
+    {
+      "email": "staff1@gmail.com",
+      "password": "$2a$10$MyreiuzTeMIQCgRQvodlXOfLqu4N/6LvvkKkVLLCSmdC1Qz9L1Xc6",
+      "name": "Staff 1",
+      "role": "staff",
+      "id": 2
+    },
+    {
+      "email": "duong.king2009@gmail.com",
+      "password": "$2a$10$T6wbXTHM3N4hUOCM.cgajeglUNdhOJF3Q77ns9qKyDO2JwFDbl4ki",
+      "name": "Hà Bùi 2",
+      "role": "leader",
+      "id": 5
+    }
+  ],
   "projects": [
     {
       "id": 1,
@@ -33,4 +55,3 @@
     }
   ]
 }
-
