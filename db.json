@@ -1,10 +1,12 @@
 {
   "users": [
     {
-      "email": "leader@gmail.com",
+      "email": "ad@gmail.com",
       "password": "$2a$10$Jn1yQGE7sPOITjmfO8XFUuEhadd.O6Y29sxXcgEcDO/lvbb4OX7/O",
-      "name": "Leader",
+      "name": "Quang Hà",
       "role": "leader",
+      "createdAt": "2025-12-30T00:00:00.000Z",
+      "approved": true,
       "id": 1
     },
     {
@@ -12,14 +14,25 @@
       "password": "$2a$10$MyreiuzTeMIQCgRQvodlXOfLqu4N/6LvvkKkVLLCSmdC1Qz9L1Xc6",
       "name": "Staff 1",
       "role": "staff",
+      "createdAt": "2025-12-28T00:00:00.000Z",
+      "approved": true,
       "id": 2
     },
     {
-      "email": "duong.king2009@gmail.com",
-      "password": "$2a$10$T6wbXTHM3N4hUOCM.cgajeglUNdhOJF3Q77ns9qKyDO2JwFDbl4ki",
-      "name": "Hà Bùi 2",
+      "email": "ad2@gmail.com",
+      "password": "$2a$10$OQKoL7n.XUuDAtNB0geZW.wItJUMf8pFEv8Muc.9eqC9Fr5LcjTqS",
+      "name": "admin2",
       "role": "leader",
-      "id": 5
+      "approved": true,
+      "id": 3
+    },
+    {
+      "email": "ad3@gmail.com",
+      "password": "$2a$10$qiABO4E0j3whgpPDztA6sO1av.mFYcjE2TruclRXnyS2uUKd5B4f2",
+      "name": "123333112",
+      "role": "leader",
+      "approved": true,
+      "id": 4
     }
   ],
   "projects": [
@@ -27,7 +40,63 @@
       "id": 1,
       "name": "Project 1",
       "description": "First project",
-      "status": "active",
+      "status": "PLANNING",
+      "userId": 1,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Project 2",
+      "description": "Second project",
+      "status": "IN_PROGRESS",
+      "userId": 1,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "name": "Project 3",
+      "description": "Second project",
+      "status": "COMPLETED",
+      "userId": 1,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "name": "Project 4",
+      "description": "Second project",
+      "status": "CANCELLED",
+      "userId": 1,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 9,
+      "name": "Project 4",
+      "description": "Second project",
+      "status": "CANCELLED",
+      "userId": 1,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "name": "Project 5",
+      "description": "First project",
+      "status": "COMPLETED",
+      "userId": 1,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 6,
+      "name": "Project 6",
+      "description": "Second project",
+      "status": "IN_PROGRESS",
+      "userId": 1,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 8,
+      "name": "Project 8",
+      "description": "Second project",
+      "status": "IN_PROGRESS",
       "userId": 1,
       "createdAt": "2024-01-01T00:00:00.000Z"
     }
@@ -41,6 +110,42 @@
       "projectId": 1,
       "userId": 1,
       "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "title": "Task 2",
+      "description": "Nhiem vu thu 2",
+      "status": "in-progress",
+      "projectId": 1,
+      "userId": 2,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "title": "Task 3",
+      "description": "Nhiem vu thu 3",
+      "status": "done",
+      "projectId": 1,
+      "userId": 2,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "taskStatus": [
+    {
+      "statusId": 1,
+      "name": "To Do"
+    },
+    {
+      "statusId": 2,
+      "name": "In Progress"
+    },
+    {
+      "statusId": 3,
+      "name": "In Review"
+    },
+    {
+      "statusId": 4,
+      "name": "Done"
     }
   ],
   "logworks": [
@@ -51,6 +156,87 @@
       "hours": 2,
       "description": "Worked on task",
       "date": "2024-01-01",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "taskId": 2,
+      "userId": 1,
+      "hours": 1,
+      "description": "Lam viec abc",
+      "date": "2024-01-01",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "project_members": [
+    {
+      "id": 1,
+      "projectId": 1,
+      "userId": 1,
+      "role": "owner",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "projectId": 1,
+      "userId": 2,
+      "role": "member",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "projectId": 2,
+      "userId": 1,
+      "role": "owner",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "projectId": 2,
+      "userId": 2,
+      "role": "member",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "projectId": 3,
+      "userId": 1,
+      "role": "owner",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 6,
+      "projectId": 4,
+      "userId": 1,
+      "role": "owner",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 7,
+      "projectId": 5,
+      "userId": 1,
+      "role": "owner",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 8,
+      "projectId": 6,
+      "userId": 1,
+      "role": "owner",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 9,
+      "projectId": 6,
+      "userId": 2,
+      "role": "member",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 11,
+      "projectId": 8,
+      "userId": 1,
+      "role": "owner",
       "createdAt": "2024-01-01T00:00:00.000Z"
     }
   ]

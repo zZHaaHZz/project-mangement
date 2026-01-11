@@ -1,0 +1,303 @@
+---
+alwaysApply: true
+---
+
+// API Client for json-server
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+class ApiClient {
+  private baseURL: string;
+  private token: string | null = null;
+
+  constructor(baseURL: string) {
+    this.baseURL = baseURL;
+    // Load token from localStorage on client side
+    if (typeof window !== 'undefined') {
+      this.token = localStorage.getItem('token');
+    }
+  }
+
+  setToken(token: string | null) {
+    this.token = token;
+    if (typeof window !== 'undefined') {
+      if (token) {
+        localStorage.setItem('token', token);
+      } else {
+        localStorage.removeItem('token');
+      }
+    }
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${this.baseURL}${endpoint}`;
+    
+    // Xử lý headers một cách an toàn
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Merge headers từ options nếu có
+    if (options.headers) {
+      if (options.headers instanceof Headers) {
+        options.headers.forEach((value, key) => {
+          headers[key] = value;
+        });
+      } else if (Array.isArray(options.headers)) {
+        options.headers.forEach(([key, value]) => {
+          headers[key] = value;
+        });
+      } else {
+        Object.assign(headers, options.headers);
+      }
+    }
+
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers,
+      });
+    } catch (error) {
+      // Network error - json-server có thể chưa chạy
+      throw new Error('Không thể kết nối đến server. Vui lòng kiểm tra json-server đã chạy chưa.');
+    }
+
+    if (!response.ok) {
+      let errorMessage = response.statusText || 'Có lỗi xảy ra';
+      
+      // Cố gắng parse error message từ response
+      try {
+        const text = await response.text();
+        if (text) {
+          try {
+            const errorData = JSON.parse(text);
+            // json-server-auth trả về error trong format khác nhau
+            if (errorData.error) {
+              errorMessage = errorData.error;
+            } else if (errorData.message) {
+              errorMessage = errorData.message;
+            } else if (typeof errorData === 'string') {
+              errorMessage = errorData;
+            }
+          } catch {
+            // Nếu không parse được JSON, dùng text gốc
+            errorMessage = text || errorMessage;
+          }
+        }
+      } catch {
+        // Nếu không đọc được response, dùng statusText
+      }
+      
+      // Thông báo lỗi thân thiện hơn dựa trên status code
+      if (response.status === 400) {
+        errorMessage = 'Email hoặc mật khẩu không đúng';
+      } else if (response.status === 404) {
+        errorMessage = 'Không tìm thấy tài khoản';
+      } else if (response.status === 0 || response.status === 500) {
+        errorMessage = 'Lỗi server. Vui lòng kiểm tra json-server đã chạy chưa.';
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    // Parse response thành JSON
+    try {
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      throw new Error('Lỗi khi xử lý phản hồi từ server');
+    }
+  }
+
+  // Auth endpoints
+  async login(email: string, password: string) {
+    const response = await this.request<{ accessToken: string; user: any }>(
+      '/login',
+      {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      }
+    );
+    this.setToken(response.accessToken);
+    // Lưu user info vào localStorage
+    if (response.user) {
+      this.saveUserToStorage(response.user);
+    }
+    return response;
+  }
+
+  async register(userData: { email: string; password: string; name: string; role?: string }) {
+    const response = await this.request<{ accessToken: string; user: any }>(
+      '/register',
+      {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      }
+    );
+    this.setToken(response.accessToken);
+    // Lưu user info vào localStorage
+    if (response.user) {
+      this.saveUserToStorage(response.user);
+    }
+    return response;
+  }
+
+  async logout() {
+    this.setToken(null);
+    this.removeUserFromStorage();
+  }
+
+  // Get current user from localStorage
+  getCurrentUserFromStorage(): any | null {
+    if (typeof window !== 'undefined') {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          return JSON.parse(userStr);
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
+  }
+
+  // Save user to localStorage
+  saveUserToStorage(user: any) {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+  }
+
+  // Remove user from localStorage
+  removeUserFromStorage() {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user');
+    }
+  }
+
+  // Users endpoints
+  async getUsers() {
+    return this.request<any[]>('/users');
+  }
+
+  async getUser(id: number) {
+    return this.request<any>(`/users/${id}`);
+  }
+
+  async createUser(userData: any) {
+    return this.request<any>('/users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async updateUser(id: number, userData: any) {
+    return this.request<any>(`/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async deleteUser(id: number) {
+    return this.request<void>(`/users/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Projects endpoints
+  async getProjects() {
+    return this.request<any[]>('/projects');
+  }
+
+  async getProject(id: number) {
+    return this.request<any>(`/projects/${id}`);
+  }
+
+  async createProject(projectData: any) {
+    return this.request<any>('/projects', {
+      method: 'POST',
+      body: JSON.stringify(projectData),
+    });
+  }
+
+  async updateProject(id: number, projectData: any) {
+    return this.request<any>(`/projects/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(projectData),
+    });
+  }
+
+  async deleteProject(id: number) {
+    return this.request<void>(`/projects/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Tasks endpoints
+  async getTasks() {
+    return this.request<any[]>('/tasks');
+  }
+
+  async getTask(id: number) {
+    return this.request<any>(`/tasks/${id}`);
+  }
+
+  async createTask(taskData: any) {
+    return this.request<any>('/tasks', {
+      method: 'POST',
+      body: JSON.stringify(taskData),
+    });
+  }
+
+  async updateTask(id: number, taskData: any) {
+    return this.request<any>(`/tasks/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(taskData),
+    });
+  }
+
+  async deleteTask(id: number) {
+    return this.request<void>(`/tasks/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Logworks endpoints
+  async getLogworks() {
+    return this.request<any[]>('/logworks');
+  }
+
+  async getLogwork(id: number) {
+    return this.request<any>(`/logworks/${id}`);
+  }
+
+  async createLogwork(logworkData: any) {
+    return this.request<any>('/logworks', {
+      method: 'POST',
+      body: JSON.stringify(logworkData),
+    });
+  }
+
+  async updateLogwork(id: number, logworkData: any) {
+    return this.request<any>(`/logworks/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(logworkData),
+    });
+  }
+
+  async deleteLogwork(id: number) {
+    return this.request<void>(`/logworks/${id}`, {
+      method: 'DELETE',
+    });
+  }
+}
+
+export const apiClient = new ApiClient(API_BASE_URL);

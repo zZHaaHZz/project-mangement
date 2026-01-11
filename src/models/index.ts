@@ -7,6 +7,7 @@ export interface User {
   name: string;
   role: UserRole; // 'leader' hoặc 'staff'
   password?: string; // Only for creation, not in responses
+  approved?: boolean; // Trạng thái duyệt tài khoản (mặc định false - chờ duyệt)
 }
 
 export interface LoginCredentials {
@@ -24,7 +25,7 @@ export interface Project {
   id: number;
   name: string;
   description: string;
-  status: "active" | "inactive" | "completed";
+  status: "PLANNING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   userId: number;
   createdAt: string;
 }
@@ -48,6 +49,15 @@ export interface Logwork {
   hours: number;
   description: string;
   date: string;
+  createdAt: string;
+}
+
+// Project Member types
+export interface ProjectMember {
+  id: number;
+  projectId: number;
+  userId: number;
+  role: 'owner' | 'member';
   createdAt: string;
 }
 
