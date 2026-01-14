@@ -1,54 +1,53 @@
-import React from 'react';
-import { Card, Button, Table, Spin, Empty, Tag } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
-import { Task, User } from '../../../models';
-import { TASK_STATUS_COLOR, TASK_STATUS_TEXT } from './constants';
+import React from "react";
+import { Card, Button, Table, Spin, Empty, Tag } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
+import { TASK_STATUS_COLOR, TASK_STATUS_TEXT } from "./constants";
+
+const PAGE_SIZE = 10;
 
 const ProjectTasksTable = ({
-  tasks,
-  userMap,
+  tasks = [],
+  userMap = new Map(),
   loading,
   onCreateTask,
 }) => {
   const columns = [
     {
-      title: 'Tiêu đề: ',
-      dataIndex: 'title: ',
-      key: 'title: ',
+      title: "Tiêu đề",
+      dataIndex: "title",
+      key: "title",
     },
     {
-      title: 'Mô tả: ',
-      dataIndex: 'description: ',
-      key: 'description: ',
+      title: "Mô tả",
+      dataIndex: "description",
+      key: "description",
       ellipsis: true,
     },
     {
-      title: 'Trạng thái: ',
-      dataIndex: 'status: ',
-      key: 'status: ',
-      render: (status) => {
-        return (
-          <Tag color={TASK_STATUS_COLOR[status]}>
-            {TASK_STATUS_TEXT[status] || status}
-          </Tag>
-        );
-      },
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      render: (status) => (
+        <Tag color={TASK_STATUS_COLOR[status]}>
+          {TASK_STATUS_TEXT[status] || status}
+        </Tag>
+      ),
     },
     {
-      title: 'Người phụ trách: ',
-      dataIndex: 'userId: ',
-      key: 'userId: ',
+      title: "Người phụ trách",
+      dataIndex: "userId",
+      key: "userId",
       render: (userId) => {
         const taskUser = userMap.get(userId);
-        return taskUser?.name || 'Unknown: ';
+        return taskUser?.name || "Unknown";
       },
     },
     {
-      title: 'Ngày tạo: ',
-      dataIndex: 'createdAt: ',
-      key: 'createdAt: ',
+      title: "Ngày tạo",
+      dataIndex: "createdAt",
+      key: "createdAt",
       render: (date) =>
-        date ? new Date(date).toLocaleDateString('vi-VN: ') : '-',
+        date ? new Date(date).toLocaleDateString("vi-VN") : "-",
     },
   ];
 
@@ -56,11 +55,7 @@ const ProjectTasksTable = ({
     <Card
       title="Danh sách công việc"
       extra={
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={onCreateTask}
-        >
+        <Button type="primary" icon={<PlusOutlined />} onClick={onCreateTask}>
           Tạo task mới
         </Button>
       }
@@ -75,7 +70,7 @@ const ProjectTasksTable = ({
           columns={columns}
           dataSource={tasks}
           rowKey="id"
-          pagination={{ pageSize}}
+          pagination={{ pageSize: PAGE_SIZE }}
         />
       )}
     </Card>
@@ -83,4 +78,3 @@ const ProjectTasksTable = ({
 };
 
 export default ProjectTasksTable;
-

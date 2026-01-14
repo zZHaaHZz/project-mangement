@@ -53,18 +53,10 @@
       "createdAt": "2024-01-01T00:00:00.000Z"
     },
     {
-      "id": 3,
-      "name": "Project 3",
-      "description": "Second project",
-      "status": "COMPLETED",
-      "userId": 1,
-      "createdAt": "2024-01-01T00:00:00.000Z"
-    },
-    {
       "id": 4,
       "name": "Project 4",
       "description": "Second project",
-      "status": "CANCELLED",
+      "status": "IN_PROGRESS",
       "userId": 1,
       "createdAt": "2024-01-01T00:00:00.000Z"
     },
@@ -99,6 +91,14 @@
       "status": "IN_PROGRESS",
       "userId": 1,
       "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Dự án cải tiến chức năng",
+      "description": "Dự án mới anh ",
+      "status": "PLANNING",
+      "userId": 1,
+      "createdAt": "2026-01-12T14:53:44.574Z",
+      "id": 10
     }
   ],
   "tasks": [
@@ -128,6 +128,15 @@
       "projectId": 1,
       "userId": 2,
       "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "title": "Test 4",
+      "description": "Gấp",
+      "status": "in-progress",
+      "projectId": 1,
+      "userId": 3,
+      "createdAt": "2026-01-14T14:40:06.862Z",
+      "id": 4
     }
   ],
   "taskStatus": [
@@ -198,13 +207,6 @@
       "createdAt": "2024-01-01T00:00:00.000Z"
     },
     {
-      "id": 5,
-      "projectId": 3,
-      "userId": 1,
-      "role": "owner",
-      "createdAt": "2024-01-01T00:00:00.000Z"
-    },
-    {
       "id": 6,
       "projectId": 4,
       "userId": 1,
@@ -238,6 +240,34 @@
       "userId": 1,
       "role": "owner",
       "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "projectId": 10,
+      "userId": 1,
+      "role": "owner",
+      "createdAt": "2026-01-12T14:53:44.694Z",
+      "id": 12
+    },
+    {
+      "projectId": 10,
+      "userId": 2,
+      "role": "member",
+      "createdAt": "2026-01-12T15:13:57.841Z",
+      "id": 14
+    },
+    {
+      "projectId": 10,
+      "userId": 4,
+      "role": "member",
+      "createdAt": "2026-01-12T15:13:57.841Z",
+      "id": 15
+    },
+    {
+      "projectId": 1,
+      "userId": 3,
+      "role": "member",
+      "createdAt": "2026-01-14T14:25:35.769Z",
+      "id": 16
     }
   ]
 }

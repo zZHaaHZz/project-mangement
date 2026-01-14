@@ -1,98 +1,86 @@
-"use client";
-
 import React, { useEffect, useMemo, useState } from "react";
-import { Project, User } from "../models";
 import { message } from "antd";
 
 import { useAuth } from "../contexts/AuthContext";
 import { useProjects } from "../lib/hooks/useProjects";
 import { useProjectMembers } from "../lib/hooks/useProjectMembers";
 import { isProjectMember } from "../lib/utils/permissions";
-import { usersApi } from "../lib/api";
+import { apiClient } from "../lib/api"; // ✅ dùng giống UserPage
 
 import ProjectsHeader from "../components/projects/ProjectsHeader";
 import ProjectsGrid from "../components/projects/ProjectsGrid";
 import ProjectsPagination from "../components/projects/ProjectsPagination";
-
-const getUsers = async () => usersApi.getUsers();
+import CreateProjectModal from "../components/projects/CreateProjectModal";
 
 const ProjectsPage = () => {
   const { user } = useAuth();
 
-  // Hook của bạn có thể trả về: { projects, loading } hoặc { projects, projectsLoading }
   const projectsHook = useProjects();
-  const projects = projectsHook.projects ?? [];
-  const projectsLoading =
-    projectsHook.projectsLoading ?? projectsHook.loading ?? false;
+  const projects = projectsHook?.projects ?? [];
+  const projectsLoading = projectsHook?.projectsLoading ?? projectsHook?.loading ?? false;
 
-  const { members } = useProjectMembers();
+  const { members = [] } = useProjectMembers();
 
+  const [openCreate, setOpenCreate] = useState(false);
+
+  // ✅ users lấy từ DB bằng apiClient (giống UserPage)
   const [users, setUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState("");
+
+  const [projectsLocal, setProjectsLocal] = useState([]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchText, setSearchText] = useState("");
   const pageSize = 12;
 
+  // sync local projects
   useEffect(() => {
-    const load = async () => {
-      try {
-        setLoadingUsers(true);
-        setError("");
-        const fetchedUsers = await getUsers(); // tránh shadow biến user
-        setUsers(fetchedUsers);
-      } catch (e) {
-        console.error(e);
-        setError(e?.message ?? "Unknown error");
-      } finally {
-        setLoadingUsers(false);
-      }
-    };
-    load();
+    setProjectsLocal(projects);
+  }, [projects]);
+
+  // ✅ fetch users
+  const fetchUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      setError("");
+      const data = await apiClient.getUsers(); // ✅
+      setUsers(Array.isArray(data) ? data : (data?.data ?? []));
+    } catch (e) {
+      console.error(e);
+      setError(e?.message ?? "Không thể tải danh sách users");
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
   }, []);
 
-  // map userId -> user để show "tạo bởi"
   const userMap = useMemo(() => {
-    // Quan trọng: dùng đúng kiểu key theo User.id (nhiều bạn bỏ company xong đổi mock id sang string)
     const map = new Map();
     users.forEach((u) => map.set(u.id, u));
     return map;
   }, [users]);
 
-  // Lấy projectIds mà user là member (từ project_members)
   const userProjectIds = useMemo(() => {
     if (!user) return [];
     return members
-      .filter((m) => m.userId === user.id)
+      .filter((m) => String(m.userId) === String(user.id))
       .map((m) => m.projectId);
   }, [members, user]);
 
-  // Fallback nếu sau này bạn muốn: projectIds mà user có tasks
-  const userTaskProjectIds = useMemo(() => {
-    return [];
-  }, []);
-
-  // Staff chỉ thấy projects tham gia, Leader thấy tất cả
   const filteredProjects = useMemo(() => {
     if (!user) return [];
 
-    if (user.role === "leader") {
-      return projects;
-    }
+    if (user.role === "leader") return projectsLocal;
 
-    return projects.filter((project) =>
-      isProjectMember(
-        user,
-        project.id,
-        project.userId,
-        userProjectIds,
-        userTaskProjectIds
-      )
+    return projectsLocal.filter((project) =>
+      isProjectMember(user, project.id, project.userId, userProjectIds, [])
     );
-  }, [projects, user, userProjectIds, userTaskProjectIds]);
+  }, [projectsLocal, user, userProjectIds]);
 
-  // Search
   const visibleProjects = useMemo(() => {
     const q = searchText.trim().toLowerCase();
     if (!q) return filteredProjects;
@@ -104,7 +92,6 @@ const ProjectsPage = () => {
     });
   }, [filteredProjects, searchText]);
 
-  // Reset trang khi list thay đổi
   useEffect(() => {
     setCurrentPage(1);
   }, [visibleProjects.length]);
@@ -114,22 +101,25 @@ const ProjectsPage = () => {
     return visibleProjects.slice(startIndex, startIndex + pageSize);
   }, [visibleProjects, currentPage]);
 
-  if (loadingUsers || projectsLoading) {
-    return <div>Đang tải...</div>;
-  }
-
-  if (error) {
-    return <div className="text-red-500">Lỗi: {error}</div>;
-  }
-
   const handleCreateProject = () => {
-    message.info("Tính năng chỉnh sửa đang được phát triển");
+    if (!user?.id) {
+      message.error("Bạn chưa đăng nhập");
+      return;
+    }
+    setOpenCreate(true);
+  };
+
+  const handleCreated = (newProject) => {
+    setProjectsLocal((prev) => [newProject, ...(prev || [])]);
   };
 
   const handleSearch = (value) => {
-    setSearchText(value);
+    setSearchText(value || "");
     setCurrentPage(1);
   };
+
+  if (loadingUsers || projectsLoading) return <div>Đang tải...</div>;
+  if (error) return <div className="text-red-500">Lỗi: {error}</div>;
 
   return (
     <div className="p-6 w-full">
@@ -138,6 +128,15 @@ const ProjectsPage = () => {
         onCreateProject={handleCreateProject}
         onSearch={handleSearch}
         searchValue={searchText}
+      />
+
+      {/* ✅ TRUYỀN users xuống modal */}
+      <CreateProjectModal
+        open={openCreate}
+        onClose={() => setOpenCreate(false)}
+        onCreated={handleCreated}
+        currentUserId={user?.id}
+        users={users}
       />
 
       {visibleProjects.length === 0 ? (

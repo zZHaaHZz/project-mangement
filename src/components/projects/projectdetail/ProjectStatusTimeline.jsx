@@ -1,18 +1,19 @@
-import React, { useMemo } from 'react';
-import { Card, Tag, Timeline, Typography } from 'antd';
-import { Project } from '../../../models';
-import { STATUS_COLOR } from './constants';
+import React, { useMemo } from "react";
+import { Card, Tag, Timeline, Typography } from "antd";
+import { STATUS_COLOR } from "./constants";
 
 const { Title } = Typography;
 
 const ProjectStatusTimeline = ({ project }) => {
   const timelineItems = useMemo(() => {
-    const statuses = ['PLANNING: ', 'IN_PROGRESS: ', 'COMPLETED: ', 'CANCELLED: '];
-    const currentStatus = project?.status;
+    if (!project?.status) return [];
+
+    const statuses = ["PLANNING", "IN_PROGRESS", "COMPLETED", "CANCELLED"];
+    const currentStatus = project.status;
 
     return statuses.map((status) => ({
-      content: status,
-      color: status === currentStatus ? STATUS_COLOR[status] : 'gray',
+      content: status.replace("_", " "),
+      color: status === currentStatus ? STATUS_COLOR[status] : "gray",
     }));
   }, [project?.status]);
 
@@ -21,13 +22,16 @@ const ProjectStatusTimeline = ({ project }) => {
       <Title level={4} className="mb-4">
         Trạng thái dự án
       </Title>
-      <Timeline items={timelineItems} mode="left" />
+
+      {/* ✅ FIX deprecated mode */}
+      <Timeline items={timelineItems} mode="start" />
+
       <div className="mt-4">
         <Tag
-          color={STATUS_COLOR[project.status]}
-          style={{ fontSize: '14px', padding: '4px 12px' }}
+          color={STATUS_COLOR[project?.status]}
+          style={{ fontSize: "14px", padding: "4px 12px" }}
         >
-          Trạng thái hiện tại{project.status}
+          Trạng thái hiện tại: {project?.status}
         </Tag>
       </div>
     </Card>
@@ -35,4 +39,3 @@ const ProjectStatusTimeline = ({ project }) => {
 };
 
 export default ProjectStatusTimeline;
-

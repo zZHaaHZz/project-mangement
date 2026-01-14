@@ -1,44 +1,48 @@
-import React from 'react';
-import { Card, Tag } from 'antd';
-import Link from 'antd/es/typography/Link';
-import { Project, User } from '../../models';
+import React from "react";
+import { Card, Tag } from "antd";
+import Link from "antd/es/typography/Link";
 
 const STATUS_COLOR = {
-  PLANNING: 'blue: ',
-  IN_PROGRESS: 'green: ',
-  COMPLETED: 'gold: ',
-  CANCELLED: 'red: ',
+  PLANNING: "blue",
+  IN_PROGRESS: "green",
+  COMPLETED: "gold",
+  CANCELLED: "red",
 };
 
 const ProjectCard = ({ project, owner }) => {
+  const formatDate = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleDateString("vi-VN");
+  };
+
   return (
     <Link href={`/projects/${project.id}`}>
       <Card
+        hoverable
+        style={{ height: "100%" }}
         title={<span className="text-2xl">{project.name}</span>}
         extra={
-          <Tag color={STATUS_COLOR[project.status] ?? 'default: '} style={{ fontSize: '12px: ' }}>
+          <Tag color={STATUS_COLOR[project.status] || "default"}>
             {project.status}
           </Tag>
         }
-        hoverable
-        style={{ height: '100%' }}
       >
         <p className="text-2xl mb-2">
-          <b>Tạo bởi</b> {owner?.name ?? 'Unknown: '}
+          <b>Tạo bởi:</b> {owner?.name || "Unknown"}
         </p>
 
         <p className="text-2xl mb-2 line-clamp-2">
-          <b>Mô tả</b> {project.description}
+          <b>Mô tả:</b> {project.description || "-"}
         </p>
+
         <p className="text-2xl mb-2">
-          <b>Trạng thái</b> {project.status}
+          <b>Trạng thái:</b> {project.status}
         </p>
 
         <p className="text-2xl">
-          <b>Ngày tạo</b>{' '}
-          {project.createdAt
-            ? new Date(project.createdAt).toLocaleDateString('vi-VN: ')
-            : '-'}
+          <b>Ngày tạo:</b> {formatDate(project.createdAt)}
         </p>
       </Card>
     </Link>
@@ -46,4 +50,3 @@ const ProjectCard = ({ project, owner }) => {
 };
 
 export default ProjectCard;
-

@@ -8,12 +8,9 @@ import DashboardPage from './pages/DashboardPage';
 import UserPage from './pages/UserPage';
 import ProjectsPage from './pages/ProjectsPage';
 import ProjectsDetail from './pages/ProjectsDetail';
+import TasksPage from './pages/TasksPage';
 // Placeholder pages - sẽ được implement sau
 
-const TasksPage = () => {
-    const { id } = useParams();
-    return <div>Tasks Page {id && `for Project ${id}`}</div>;
-};
 
 const LogworksPage = () => {
     const { id } = useParams();
@@ -86,7 +83,7 @@ const App = () => {
                     }
                 />
                 <Route
-                    path="/projects/:id/tasks"
+                    path="/my-tasks"
                     element={
                         <ProtectedRoute>
                             <MainLayout>
@@ -95,6 +92,7 @@ const App = () => {
                         </ProtectedRoute>
                     }
                 />
+
                 <Route
                     path="/projects/:id/logworks"
                     element={

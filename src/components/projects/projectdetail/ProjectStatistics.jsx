@@ -1,6 +1,6 @@
-import React from 'react';
-import { Row, Col, Card, Statistic } from 'antd';
-import { PlusOutlined, UserAddOutlined } from '@ant-design/icons';
+import React from "react";
+import { Row, Col, Card, Statistic } from "antd";
+import { PlusOutlined, UserAddOutlined } from "@ant-design/icons";
 
 const ProjectStatistics = ({
   totalTasks,
@@ -19,15 +19,21 @@ const ProjectStatistics = ({
           />
         </Card>
       </Col>
+
       <Col xs={24} sm={12} md={6}>
         <Card>
           <Statistic
             title="Task hoàn thành"
             value={completedTasks}
-            valueStyle={{ color: '#3f8600' }}
+            styles={{
+              content: {
+                color: "#3f8600",
+              },
+            }}
           />
         </Card>
       </Col>
+
       <Col xs={24} sm={12} md={6}>
         <Card>
           <Statistic
@@ -37,6 +43,7 @@ const ProjectStatistics = ({
           />
         </Card>
       </Col>
+
       <Col xs={24} sm={12} md={6}>
         <Card>
           <Statistic
@@ -51,4 +58,3 @@ const ProjectStatistics = ({
 };
 
 export default ProjectStatistics;
-

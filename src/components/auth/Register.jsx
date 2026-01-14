@@ -175,7 +175,7 @@ const Register = ({ onTabChange }) => {
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            onTabChange('login');
+            onTabChange('/login');
           }}
           className="text-blue-600 hover:text-blue-800 font-medium"
         >
