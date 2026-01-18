@@ -12,6 +12,7 @@ import { canAddProjectMember, isLeader } from "../lib/utils/permissions";
 import EditProjectModal from "../components/projects/projectdetail/EditProjectModal";
 import AddProjectMemberModal from "../components/projects/projectdetail/AddProjectMemberModal";
 import CreateTaskForMemberModal from "../components/projects/projectdetail/CreateTaskForMemberModal";
+
 import {
   ProjectDetailHeader,
   ProjectStatusTimeline,
@@ -38,15 +39,14 @@ const ProjectsDetail = () => {
 
   const [projectMembers, setProjectMembers] = useState([]);
   const [memberUsers, setMemberUsers] = useState([]);
-
   const [allUsers, setAllUsers] = useState([]);
 
-  const [loading, setLoading] = useState(true);
+  const [loadingMembers, setLoadingMembers] = useState(true);
 
   const [openEdit, setOpenEdit] = useState(false);
   const [openAddMember, setOpenAddMember] = useState(false);
-
   const [openCreateTask, setOpenCreateTask] = useState(false);
+
   // 1) set project từ list projects
   useEffect(() => {
     if (!projectId) return;
@@ -73,7 +73,7 @@ const ProjectsDetail = () => {
     const run = async () => {
       try {
         const data = await usersApi.getUsers();
-        setAllUsers(data || []);
+        setAllUsers(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error("Failed to fetch users:", e);
       }
@@ -81,23 +81,24 @@ const ProjectsDetail = () => {
     run();
   }, []);
 
-  // 4) fetch members (tách ra thành callback để gọi lại sau khi add)
+  // 4) fetch members (tách ra callback để gọi lại sau khi add/remove)
   const fetchMembers = useCallback(async () => {
     if (!projectId) return;
 
     try {
-      setLoading(true);
+      setLoadingMembers(true);
 
       const membersData = await projectMembersApi.getProjectMembersByProject(projectId);
-      setProjectMembers(membersData || []);
+      const safeMembers = Array.isArray(membersData) ? membersData : [];
+      setProjectMembers(safeMembers);
 
-      const userIds = (membersData || []).map((m) => m.userId);
+      const userIds = safeMembers.map((m) => m.userId);
       const usersData = await Promise.all(userIds.map((uid) => usersApi.getUser(uid)));
-      setMemberUsers(usersData || []);
+      setMemberUsers(Array.isArray(usersData) ? usersData : []);
     } catch (e) {
       console.error("Failed to fetch members:", e);
     } finally {
-      setLoading(false);
+      setLoadingMembers(false);
     }
   }, [projectId]);
 
@@ -121,8 +122,10 @@ const ProjectsDetail = () => {
   // 7) userMap
   const userMap = useMemo(() => {
     const map = new Map();
-    if (owner) map.set(owner.id, owner);
-    (memberUsers || []).forEach((u) => map.set(u.id, u));
+    if (owner?.id != null) map.set(owner.id, owner);
+    (memberUsers || []).forEach((u) => {
+      if (u?.id != null) map.set(u.id, u);
+    });
     return map;
   }, [owner, memberUsers]);
 
@@ -131,13 +134,54 @@ const ProjectsDetail = () => {
     const totalTasks = projectTasks.length;
     const completedTasks = projectTasks.filter((t) => t.status === "done").length;
     const totalHours = projectLogworks.reduce((sum, lw) => sum + Number(lw.hours || 0), 0);
-    const totalMembers = (projectMembers || []).length; // + owner
+
+    // ✅ member table đang chứa cả owner (role=owner) => totalMembers = unique users
+    const uniqueUserIds = new Set((projectMembers || []).map((m) => String(m.userId)));
+    const totalMembers = uniqueUserIds.size;
+
     return { totalTasks, completedTasks, totalHours, totalMembers };
   }, [projectTasks, projectLogworks, projectMembers]);
 
   // 9) permissions
-  const canEdit = isLeader(user) || user?.id === project?.userId;
+  const canEdit = isLeader(user) || String(user?.id) === String(project?.userId);
   const canAddMember = canAddProjectMember(user, project?.userId);
+
+  // ✅ staff chỉ được xem khi là member/owner của project
+  const isAllowed = useMemo(() => {
+    if (!user) return false;
+    if (user.role === "leader") return true;
+
+    // staff: là owner
+    if (String(project?.userId) === String(user.id)) return true;
+
+    // staff: là member
+    return (projectMembers || []).some(
+      (m) =>
+        String(m.projectId) === String(projectId) &&
+        String(m.userId) === String(user.id)
+    );
+  }, [user, project?.userId, projectMembers, projectId]);
+
+  // ✅ guard quyền: staff không thuộc project -> toast + redirect dashboard
+  useEffect(() => {
+    if (!user || !projectId) return;
+
+    if (user.role === "leader") return;
+
+    // chờ load members xong + project đã set
+    if (loadingMembers) return;
+
+    if (!project) {
+      message.error("Dự án không tồn tại hoặc bạn không có quyền");
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+
+    if (!isAllowed) {
+      message.error("Bạn không có quyền truy cập dự án này");
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, projectId, loadingMembers, project, isAllowed, navigate]);
 
   // 10) handlers
   const handleEdit = () => setOpenEdit(true);
@@ -158,12 +202,15 @@ const ProjectsDetail = () => {
   };
 
   const handleAddMember = () => setOpenAddMember(true);
+
   const handleRemoveMember = async (memberRow) => {
-    // memberRow là record của project_members: { id, projectId, userId, role, createdAt }
     if (!memberRow?.id) return;
 
     // chặn xóa owner
-    if (memberRow.role === "owner" || String(memberRow.userId) === String(project?.userId)) {
+    if (
+      memberRow.role === "owner" ||
+      String(memberRow.userId) === String(project?.userId)
+    ) {
       message.warning("Không thể xóa chủ dự án");
       return;
     }
@@ -176,8 +223,6 @@ const ProjectsDetail = () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       message.success("Đã xóa thành viên khỏi dự án");
-
-      // refresh lại danh sách members + memberUsers
       await fetchMembers();
     } catch (e) {
       console.error(e);
@@ -185,18 +230,25 @@ const ProjectsDetail = () => {
     }
   };
 
-const handleCreateTask = () => {
-  setOpenCreateTask(true);
-};
+  const handleCreateTask = () => {
+    setOpenCreateTask(true);
+  };
 
-  // ✅ return UI (sau khi đã khai báo hết hooks)
-  if (loading || !project) {
+  // ✅ render
+  if (loadingMembers) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Spin size="large" />
       </div>
     );
   }
+
+  // staff không quyền -> useEffect sẽ navigate, ở đây return null để không flash UI
+  if (!user) return null;
+  if (user.role !== "leader" && !isAllowed) return null;
+
+  // project null (sau load) -> cũng return null (đã toast+redirect ở effect)
+  if (!project) return null;
 
   return (
     <div className="p-6 w-full">
@@ -232,15 +284,13 @@ const handleCreateTask = () => {
             members={projectMembers}
             owner={owner}
             userMap={userMap}
-            loading={loading}
+            loading={loadingMembers}
             canAddMember={canAddMember}
             onAddMember={handleAddMember}
             canRemoveMember={canEdit}
             onRemoveMember={handleRemoveMember}
             currentUserId={project?.userId}
           />
-
-
         </Col>
       </Row>
 
@@ -253,14 +303,17 @@ const handleCreateTask = () => {
         existingMembers={projectMembers}
         onAdded={fetchMembers}
       />
-<CreateTaskForMemberModal
-  open={openCreateTask}
-  onClose={() => setOpenCreateTask(false)}
-  projectId={projectId}
-  projectMembers={projectMembers}   // list members của project hiện tại (đã fetch)
-  userMap={userMap}                 // map (owner + memberUsers)
-  onCreated={() => {/* refetch tasks */}}
-/>
+
+      <CreateTaskForMemberModal
+        open={openCreateTask}
+        onClose={() => setOpenCreateTask(false)}
+        projectId={projectId}
+        projectMembers={projectMembers}
+        userMap={userMap}
+        onCreated={() => {
+          // TODO: nếu useTasks có refetch thì gọi ở đây
+        }}
+      />
 
       <Divider />
 

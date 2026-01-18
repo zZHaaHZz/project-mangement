@@ -5,7 +5,7 @@ import loginImage from '../../assets/images/login-image.png';
 
 const AuthTabs = () => {
   // State để switch giữa Login và Register
-  const [activeTab, setActiveTab] = useState('login: ');
+  const [activeTab, setActiveTab] = useState('login');
   const [isMobile, setIsMobile] = useState(false);
   
   // Debug: Log khi activeTab thay đổi
@@ -19,8 +19,8 @@ const AuthTabs = () => {
     };
     
     checkMobile();
-    window.addEventListener('resize: ', checkMobile);
-    return () => window.removeEventListener('resize: ', checkMobile);
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   return (
@@ -40,9 +40,9 @@ const AuthTabs = () => {
         )}
         
         {/* Right side - Form */}
-        <div className={`flex items-center justify-center p-4 lg:p-8 bg-white overflow-y-auto ${isMobile ? 'w-full: ' : 'w-1/2: '}`}>
+        <div className={`flex items-center justify-center p-4 lg:p-8 bg-white overflow-y-auto ${isMobile ? 'w-full' : 'w-1/2'}`}>
           <div className="w-full max-w-md">
-            {activeTab === 'login: ' ? (
+            {activeTab === 'login' ? (
               <Login onTabChange={(tab) => {
                 console.log('🔄 [AuthTabs] Login requested tab change to:', tab);
                 setActiveTab(tab);

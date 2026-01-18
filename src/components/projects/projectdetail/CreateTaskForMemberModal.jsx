@@ -26,7 +26,7 @@ const CreateTaskForMemberModal = ({
 
   const memberOptions = useMemo(() => {
     return membersOfProject
-      .filter((m) => m.role !== "owner") // tuỳ bạn: cho owner assign hay không
+      // .filter((m) => m.role !== "owner") // tuỳ bạn: cho owner assign hay không
       .map((m) => {
         const u = userMap.get(m.userId);
         if (!u) return null;

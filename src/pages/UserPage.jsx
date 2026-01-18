@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button, Form, message, Input, Space } from 'antd';
 import { PlusOutlined, SearchOutlined, MailOutlined } from '@ant-design/icons';
+import { useNavigate } from "react-router-dom";
 import { apiClient } from '../lib/api';
 import { User } from '../models';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,16 +21,18 @@ const UserPage = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [form] = Form.useForm();
-
+  const navigate = useNavigate();
   // Kiểm tra quyền - chỉ Leader mới có thể quản lý users
-  if (!isLeader(currentUser)) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">Bạn không có quyền truy cập trang này. Chỉ Leader mới có thể quản lý users.</p>
-        </div>
-      </div>
-    );
+ useEffect(() => {
+    if (currentUser && !isLeader(currentUser)) {
+      message.error("Bạn không có quyền truy cập trang này");
+      navigate("/dashboard", { replace: true });
+    }
+  }, [currentUser, navigate]);
+
+  // ⛔ Không render UI khi không đủ quyền
+  if (!currentUser || !isLeader(currentUser)) {
+    return null;
   }
 
   // Fetch users

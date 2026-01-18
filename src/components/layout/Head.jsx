@@ -2,7 +2,7 @@ import { Input, Avatar, Badge, Dropdown } from "antd";
 import { BellOutlined, UserOutlined, LogoutOutlined, SettingOutlined } from "@ant-design/icons";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-
+import avatarDefault from "../../assets/images/avatar2.png"
 const { Search } = Input;
 
 const Head = () => {
@@ -78,12 +78,13 @@ const Head = () => {
         <Dropdown
           menu={{ items: menuItems }}
           placement="bottomRight"
-          trigger={["click"]} // ✅ CHÍNH LỖI Ở ĐÂY
+          trigger={["click"]}
           arrow
         >
           <Avatar
             size="large"
             className="cursor-pointer hover:opacity-80 select-none"
+            src={user?.avatar || avatarDefault}
             style={{ backgroundColor: "#1890ff" }}
           >
             {getInitials(user?.name)}

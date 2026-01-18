@@ -27,9 +27,9 @@
       "id": 3
     },
     {
-      "email": "ad3@gmail.com",
-      "password": "$2a$10$qiABO4E0j3whgpPDztA6sO1av.mFYcjE2TruclRXnyS2uUKd5B4f2",
-      "name": "123333112",
+      "email": "ad21313@gmail.com",
+      "password": "$2a$10$u06l66VdQOOMvrukGoVr3./en0qqzyLENtfHlCVqoBQ/NjExlh.wK",
+      "name": "121323",
       "role": "leader",
       "approved": true,
       "id": 4
@@ -137,6 +137,15 @@
       "userId": 3,
       "createdAt": "2026-01-14T14:40:06.862Z",
       "id": 4
+    },
+    {
+      "title": "Cải tiến chức năng đăng nhập",
+      "description": "Làm tôi ưu đăng nhập cho người dùng mượt ",
+      "status": "todo",
+      "projectId": 10,
+      "userId": 2,
+      "createdAt": "2026-01-15T13:48:35.644Z",
+      "id": 5
     }
   ],
   "taskStatus": [
@@ -254,13 +263,6 @@
       "role": "member",
       "createdAt": "2026-01-12T15:13:57.841Z",
       "id": 14
-    },
-    {
-      "projectId": 10,
-      "userId": 4,
-      "role": "member",
-      "createdAt": "2026-01-12T15:13:57.841Z",
-      "id": 15
     },
     {
       "projectId": 1,

@@ -110,7 +110,7 @@ const Login = ({ onTabChange }) => {
           className="w-full bg-black hover:bg-gray-800"
           size="large"
       >
-          {loading ? 'Logging in...' : 'Đăng nhập: '}
+          {loading ? 'Logging in...' : 'Đăng nhập'}
         </Button>
     </form>
     

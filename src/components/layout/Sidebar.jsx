@@ -18,7 +18,7 @@ import { useProjectMembers } from "../../lib/hooks/useProjectMembers";
 import { useAuth } from "../../contexts/AuthContext";
 import { canManageStaff, isProjectMember } from "../../lib/utils/permissions";
 
-const Siderbar = () => {
+const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [openKeys, setOpenKeys] = useState([]);
@@ -106,7 +106,10 @@ const Siderbar = () => {
         icon: <CheckSquareOutlined />,
         label: (
           <div className="flex items-center justify-between">
-            <span>My Tasks</span>
+            <span>
+              {canManageStaff(user) ? "Task" : "My Task"}
+            </span>
+           
             <Badge count={myTasksCount} showZero style={{ backgroundColor: "#52c41a" }} />
           </div>
         ),
@@ -119,7 +122,7 @@ const Siderbar = () => {
 
     items.push({ key: "/settings", icon: <SettingOutlined />, label: "Settings" });
 
-    items.push({ type: "group", label: "PROJECTS", children: projectMenuItems });
+    // items.push({ type: "group", label: "PROJECTS", children: projectMenuItems });
 
     return items;
   }, [user, myTasksCount, projectMenuItems]);
@@ -174,4 +177,4 @@ const Siderbar = () => {
   );
 };
 
-export default Siderbar;
+export default Sidebar;

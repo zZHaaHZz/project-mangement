@@ -1,26 +1,25 @@
-// Projects API endpoints
-import { BaseApiClient } from './base';
-import { Project } from '../../models';
+import { BaseApiClient } from "./base";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export class ProjectsApi extends BaseApiClient {
-  async getProjects() {
-    return this.get('/projects');
+  constructor() {
+    super(API_BASE_URL);
   }
 
-  async getProject(id) {
+  getProjects() {
+    return this.get("/projects");
+  }
+  getProject(id) {
     return this.get(`/projects/${id}`);
   }
-
-  async createProject(projectData) {
-    return this.post('/projects', projectData);
+  createProject(data) {
+    return this.post("/projects", data);
   }
-
-  async updateProject(id, projectData) {
-    return this.patch(`/projects/${id}`, projectData);
+  updateProject(id, data) {
+    return this.patch(`/projects/${id}`, data);
   }
-
-  async deleteProject(id) {
+  deleteProject(id) {
     return this.delete(`/projects/${id}`);
   }
 }
-

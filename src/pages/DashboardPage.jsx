@@ -19,7 +19,7 @@ const DashboardPage = () => {
   return (
     <div className="w-full">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">
-        {isLeader(user) ? 'Dashboard - Leader: ' : 'Dashboard - Staff'}
+        {isLeader(user) ? 'Dashboard - Leader ' : 'Dashboard - Staff'}
       </h1>
     </div>
   );
