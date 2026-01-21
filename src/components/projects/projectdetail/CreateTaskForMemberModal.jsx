@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Modal, Form, Input, Select, message } from "antd";
+import { Modal, Form, Input, Select, message, DatePicker, InputNumber } from "antd";
 
 const { TextArea } = Input;
 
@@ -46,6 +46,8 @@ const CreateTaskForMemberModal = ({
         status: values.status,
         projectId: Number(projectId),
         userId: Number(values.userId),
+        estimation: values.estimation ? Number(values.estimation) : 0,
+        dueDate: values.dueDate ? values.dueDate.toISOString() : null,
         createdAt: new Date().toISOString(),
       };
 
@@ -105,6 +107,15 @@ const CreateTaskForMemberModal = ({
             notFoundContent="Dự án chưa có thành viên"
           />
         </Form.Item>
+
+        <div className="flex gap-4">
+          <Form.Item label="Hạn chót" name="dueDate" style={{ flex: 1 }}>
+            <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+          </Form.Item>
+          <Form.Item label="Ước tính (giờ)" name="estimation" style={{ flex: 1 }}>
+            <InputNumber min={0} step={0.5} style={{ width: '100%' }} />
+          </Form.Item>
+        </div>
 
         <Form.Item label="Trạng thái" name="status" initialValue="todo">
           <Select

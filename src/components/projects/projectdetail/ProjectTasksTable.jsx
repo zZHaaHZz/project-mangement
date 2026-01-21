@@ -43,6 +43,19 @@ const ProjectTasksTable = ({
       },
     },
     {
+      title: "Hạn chót",
+      dataIndex: "dueDate",
+      key: "dueDate",
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "-",
+    },
+    {
+      title: "Ước tính (h)",
+      dataIndex: "estimation",
+      key: "estimation",
+      render: (val) => (val ? `${val}h` : "-"),
+    },
+    {
       title: "Ngày tạo",
       dataIndex: "createdAt",
       key: "createdAt",

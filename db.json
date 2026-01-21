@@ -146,6 +146,17 @@
       "userId": 2,
       "createdAt": "2026-01-15T13:48:35.644Z",
       "id": 5
+    },
+    {
+      "title": "Công việc của tôi",
+      "description": "Tạo mới công viẹc",
+      "status": "todo",
+      "projectId": 6,
+      "userId": 2,
+      "estimation": 5,
+      "dueDate": "2026-01-15T17:00:00.000Z",
+      "createdAt": "2026-01-21T14:34:32.156Z",
+      "id": 6
     }
   ],
   "taskStatus": [
@@ -184,6 +195,30 @@
       "description": "Lam viec abc",
       "date": "2024-01-01",
       "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "taskId": 3,
+      "userId": 2,
+      "hours": 1,
+      "note": "",
+      "createdAt": "2026-01-21T14:44:23.600Z",
+      "id": 3
+    },
+    {
+      "taskId": 6,
+      "userId": 2,
+      "hours": 4,
+      "note": "Log lần đầu",
+      "createdAt": "2026-01-21T14:44:58.776Z",
+      "id": 4
+    },
+    {
+      "taskId": 6,
+      "userId": 2,
+      "hours": 3,
+      "note": "",
+      "createdAt": "2026-01-21T14:45:17.329Z",
+      "id": 5
     }
   ],
   "project_members": [
