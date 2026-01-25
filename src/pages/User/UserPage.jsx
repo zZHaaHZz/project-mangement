@@ -2,13 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Button, Form, message, Input, Space } from 'antd';
 import { PlusOutlined, SearchOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
-import { apiClient } from '../lib/api';
-import { User } from '../models';
-import { useAuth } from '../contexts/AuthContext';
-import { isLeader } from '../lib/utils/permissions';
-import UserTable from '../components/users/UserTable';
-import UserModal from '../components/users/UserModal';
-import InviteUserModal from '../components/users/InviteUserModal';
+import { apiClient } from '@/lib/api';
+import { User } from '@/models';
+import { useAuth } from '@/contexts/AuthContext';
+import { isLeader } from '@/lib/utils/permissions';
+import UserTable from './components/UserTable';
+import UserModal from './components/UserModal';
+import InviteUserModal from './components/InviteUserModal';
 
 const { Search } = Input;
 
@@ -23,7 +23,7 @@ const UserPage = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   // Kiểm tra quyền - chỉ Leader mới có thể quản lý users
- useEffect(() => {
+  useEffect(() => {
     if (currentUser && !isLeader(currentUser)) {
       message.error("Bạn không có quyền truy cập trang này");
       navigate("/dashboard", { replace: true });

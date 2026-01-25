@@ -1,7 +1,8 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import AuthTabs from '../components/auth/AuthTabs';
+import { useAuth } from '@/contexts/AuthContext';
+import AuthLayout from '@/components/auth/AuthLayout';
+import Login from '@/components/auth/Login';
 
 const LoginPage = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -19,7 +20,11 @@ const LoginPage = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <AuthTabs />;
+  return (
+    <AuthLayout>
+      <Login />
+    </AuthLayout>
+  );
 };
 
 export default LoginPage;

@@ -3,12 +3,13 @@ import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-
 import { useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/routes/ProtectedRoute';
 import MainLayout from './components/layout/MainLayout';
-import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import UserPage from './pages/UserPage';
-import ProjectsPage from './pages/ProjectsPage';
-import ProjectsDetail from './pages/ProjectsDetail';
-import TasksPage from './pages/TasksPage';
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import DashboardPage from '@/pages/DashboardPage';
+import UserPage from '@/pages/User/UserPage';
+import ProjectPage from '@/pages/Project/ProjectPage';
+import ProjectDetail from '@/pages/Project/ProjectDetail';
+import TaskPage from '@/pages/Task/TaskPage';
 // Placeholder pages - sẽ được implement sau
 
 
@@ -40,8 +41,9 @@ const App = () => {
         <BrowserRouter>
 
             <Routes>
-                {/* Public route - Login */}
+                {/* Public routes */}
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
 
                 {/* Protected routes - Cần đăng nhập */}
                 <Route
@@ -67,7 +69,7 @@ const App = () => {
                     element={
                         <ProtectedRoute>
                             <MainLayout>
-                                <ProjectsPage />
+                                <ProjectPage />
                             </MainLayout>
                         </ProtectedRoute>
                     }
@@ -77,7 +79,7 @@ const App = () => {
                     element={
                         <ProtectedRoute>
                             <MainLayout>
-                                <ProjectsDetail />
+                                <ProjectDetail />
                             </MainLayout>
                         </ProtectedRoute>
                     }
@@ -87,7 +89,7 @@ const App = () => {
                     element={
                         <ProtectedRoute>
                             <MainLayout>
-                                <TasksPage />
+                                <TaskPage />
                             </MainLayout>
                         </ProtectedRoute>
                     }

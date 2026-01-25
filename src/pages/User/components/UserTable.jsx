@@ -6,8 +6,8 @@ import {
   UserOutlined,
   CheckCircleOutlined,
 } from "@ant-design/icons";
-import avatar1 from "../../assets/images/avatar.png";
-import avatar2 from "../../assets/images/avatar2.png";
+import avatar1 from "@/assets/images/avatar.png";
+import avatar2 from "@/assets/images/avatar2.png";
 
 const UserTable = ({ users = [], loading, onEdit, onDelete, onApprove }) => {
   const getAvatar = (userId) => (Number(userId) % 2 === 0 ? avatar1 : avatar2);

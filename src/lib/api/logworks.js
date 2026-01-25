@@ -2,7 +2,13 @@
 import { BaseApiClient } from './base';
 import { Logwork } from '../../models';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 export class LogworksApi extends BaseApiClient {
+  constructor() {
+    super(API_BASE_URL);
+  }
+
   async getLogworks() {
     return this.get('/logworks');
   }
@@ -23,4 +29,3 @@ export class LogworksApi extends BaseApiClient {
     return this.delete(`/logworks/${id}`);
   }
 }
-

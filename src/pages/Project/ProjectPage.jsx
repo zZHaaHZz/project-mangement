@@ -1,18 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { message } from "antd";
 
-import { useAuth } from "../contexts/AuthContext";
-import { useProjects } from "../lib/hooks/useProjects";
-import { useProjectMembers } from "../lib/hooks/useProjectMembers";
-import { isProjectMember } from "../lib/utils/permissions";
-import { apiClient } from "../lib/api"; // ✅ dùng giống UserPage
+import { useAuth } from "@/contexts/AuthContext";
+import { useProjects } from "@/lib/hooks/useProjects";
+import { useProjectMembers } from "@/lib/hooks/useProjectMembers";
+import { useTasks } from "@/lib/hooks/useTasks";
+import { isProjectMember } from "@/lib/utils/permissions";
+import { apiClient } from "@/lib/api";
 
-import ProjectsHeader from "../components/projects/ProjectsHeader";
-import ProjectsGrid from "../components/projects/ProjectsGrid";
-import ProjectsPagination from "../components/projects/ProjectsPagination";
-import CreateProjectModal from "../components/projects/CreateProjectModal";
+import ProjectsHeader from "@/pages/Project/components/ProjectsHeader.jsx";
+import ProjectsGrid from "@/pages/Project/components/ProjectsGrid.jsx";
+import ProjectsPagination from "@/pages/Project/components/ProjectsPagination.jsx";
+import CreateProjectModal from "@/pages/Project/components/CreateProjectModal.jsx";
 
-const ProjectsPage = () => {
+const ProjectPage = () => {
   const { user } = useAuth();
 
   const projectsHook = useProjects();
@@ -20,6 +21,7 @@ const ProjectsPage = () => {
   const projectsLoading = projectsHook?.projectsLoading ?? projectsHook?.loading ?? false;
 
   const { members = [] } = useProjectMembers();
+  const { tasks = [] } = useTasks();
 
   const [openCreate, setOpenCreate] = useState(false);
 
@@ -71,15 +73,23 @@ const ProjectsPage = () => {
       .map((m) => m.projectId);
   }, [members, user]);
 
+  // ✅ Tính toán userTaskProjectIds để check fallback (user có task trong project)
+  const userTaskProjectIds = useMemo(() => {
+    if (!user) return [];
+    const myTasks = tasks.filter((t) => String(t.userId) === String(user.id));
+    return Array.from(new Set(myTasks.map((t) => t.projectId)));
+  }, [tasks, user]);
+
   const filteredProjects = useMemo(() => {
     if (!user) return [];
 
     if (user.role === "leader") return projectsLocal;
 
+    // ✅ Sử dụng cả userProjectIds và userTaskProjectIds để check quyền
     return projectsLocal.filter((project) =>
-      isProjectMember(user, project.id, project.userId, userProjectIds, [])
+      isProjectMember(user, project.id, project.userId, userProjectIds, userTaskProjectIds)
     );
-  }, [projectsLocal, user, userProjectIds]);
+  }, [projectsLocal, user, userProjectIds, userTaskProjectIds]);
 
   const visibleProjects = useMemo(() => {
     const q = searchText.trim().toLowerCase();
@@ -156,4 +166,4 @@ const ProjectsPage = () => {
   );
 };
 
-export default ProjectsPage;
+export default ProjectPage;

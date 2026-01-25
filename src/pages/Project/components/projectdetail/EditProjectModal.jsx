@@ -78,10 +78,10 @@ const EditProjectModal = ({ open, onClose, project, onUpdated }) => {
         >
           <Select
             options={[
-              { value: "PLANNING", label: "Planning" },
-              { value: "IN_PROGRESS", label: "In Progress" },
-              { value: "COMPLETED", label: "Completed" },
-              { value: "CANCELLED", label: "Cancelled" },
+              { value: "PLANNING", label: "Đang lên kế hoạch (Planning)" },
+              { value: "IN_PROGRESS", label: "Đang thực hiện (In Progress)" },
+              { value: "COMPLETED", label: "Hoàn thành (Completed)" },
+              { value: "CANCELLED", label: "Đã hủy (Cancelled)" },
             ]}
           />
         </Form.Item>

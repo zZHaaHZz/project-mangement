@@ -1,7 +1,7 @@
 import React from 'react';
 import { Row, Col } from 'antd';
-import { Project, User } from '../../models';
-import ProjectCard from './ProjectCard';
+import { Project, User } from '@/models';
+import ProjectCard from '@/pages/Project/components/ProjectCard.jsx';
 
 const ProjectsGrid = ({ projects, userMap }) => {
   return (

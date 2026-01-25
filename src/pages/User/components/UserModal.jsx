@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Form, Input, Select, Button, Space, message, Switch } from 'antd';
-import { User } from '../../models';
-import { apiClient } from '../../lib/api';
+import { User } from '@/models';
+import { apiClient } from '@/lib/api';
 
 const { Option } = Select;
 

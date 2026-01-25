@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Modal, Form, Input, Button, Space, message, Select } from 'antd';
 import { MailOutlined } from '@ant-design/icons';
-import { usersApi } from '../../lib/api';
-import { User } from '../../models';
+import { usersApi } from '@/lib/api';
+import { User } from '@/models';
 
 const { Option } = Select;
 
@@ -18,11 +18,11 @@ const InviteUserModal = ({
   const handleSubmit = async (values) => {
     try {
       setLoading(true);
-      
+
       // Kiểm tra xem email đã tồn tại chưa
       const allUsers = await usersApi.getUsers();
       const existingUser = allUsers.find((u) => u.email === values.email);
-      
+
       if (existingUser) {
         // Email đã tồn tại
         message.warning('Email này đã tồn tại trong hệ thống.');
@@ -40,7 +40,7 @@ const InviteUserModal = ({
         await usersApi.createUser(userData);
         message.success('Đã gửi lời mời thành công! Nhân viên sẽ nhận email hướng dẫn đăng nhập với mật khẩu tạm thời.');
       }
-      
+
       form.resetFields();
       onSuccess();
     } catch (error) {

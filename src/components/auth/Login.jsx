@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Input, Button, Alert, Checkbox } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
-const Login = ({ onTabChange }) => {
+const Login = () => {
+  const navigate = useNavigate();
   // Local state cho form
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,47 +34,45 @@ const Login = ({ onTabChange }) => {
   return (
     <div className="w-full">
       {/* Welcome heading */}
-      <div className="mb-2">
-        <h1 className="text-3xl font-bold text-gray-900">PROJECT MANAGEMENT</h1>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+          PROJECT MANAGEMENT
+        </h1>
+        <p className="text-gray-600 text-base">Chào mừng bạn quay lại! Vui lòng nhập thông tin của bạn.</p>
       </div>
-      
-      {/* Subheading */}
-      <div className="mb-8">
-        <p className="text-gray-600">Chào mừng bạn quay lại! Vui lòng nhập thông tin của bạn.</p>
-      </div> 
-      
+
       <form onSubmit={handleSubmit} className="w-full">
         {/* Email input */}
         <div className="mb-4">
           <label className="block mb-2 text-xl font-medium text-gray-700 ">Email</label>
           <Input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          disabled={loading}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={loading}
             className="w-full"
             size="large"
             placeholder="Nhập email"
-        />
-      </div>
-      
+          />
+        </div>
+
         {/* Password input */}
         <div className="mb-4">
           <label className="block mb-2 text-xl font-medium text-gray-700">Mật khẩu</label>
           <Input.Password
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          disabled={loading}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={loading}
             className="w-full"
             size="large"
             placeholder="Nhập mật khẩu"
-        />
-      </div>
+          />
+        </div>
 
         {/* Error message */}
-      {error && (
+        {error && (
           <Alert
             message={error}
             type="error"
@@ -102,18 +102,26 @@ const Login = ({ onTabChange }) => {
         </div>
 
         {/* Login button */}
-        <Button 
+        <Button
           type="primary"
           htmlType="submit"
           loading={loading}
           disabled={loading}
-          className="w-full bg-black hover:bg-gray-800"
+          className="w-full"
           size="large"
-      >
-          {loading ? 'Logging in...' : 'Đăng nhập'}
+          style={{
+            height: '48px',
+            borderRadius: '10px',
+            fontWeight: 600,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            border: 'none',
+            boxShadow: '0 4px 6px -1px rgba(102, 126, 234, 0.3)'
+          }}
+        >
+          {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
         </Button>
-    </form>
-    
+      </form>
+
       {/* Sign up link */}
       <div className="mt-6 text-center">
         <span className="text-gray-600">Bạn chưa có tài khoản? </span>
@@ -121,13 +129,13 @@ const Login = ({ onTabChange }) => {
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            onTabChange('register');
+            navigate('/register');
           }}
           className="text-blue-600 hover:text-blue-800 font-medium"
         >
           Đăng ký miễn phí
         </a>
-    </div>
+      </div>
     </div>
   );
 };

@@ -2,16 +2,16 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { Row, Col, Divider, Spin, message } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
 
-import { useAuth } from "../contexts/AuthContext";
-import { useProjects } from "../lib/hooks/useProjects";
-import { useTasks } from "../lib/hooks/useTasks";
-import { useLogworks } from "../lib/hooks/useLogworks";
-import { usersApi, projectMembersApi } from "../lib/api";
-import { canAddProjectMember, isLeader } from "../lib/utils/permissions";
+import { useAuth } from "@/contexts/AuthContext";
+import { useProjects } from "@/lib/hooks/useProjects";
+import { useTasks } from "@/lib/hooks/useTasks";
+import { useLogworks } from "@/lib/hooks/useLogworks";
+import { usersApi, projectMembersApi } from "@/lib/api";
+import { canAddProjectMember, isLeader } from "@/lib/utils/permissions";
 
-import EditProjectModal from "../components/projects/projectdetail/EditProjectModal";
-import AddProjectMemberModal from "../components/projects/projectdetail/AddProjectMemberModal";
-import CreateTaskForMemberModal from "../components/projects/projectdetail/CreateTaskForMemberModal";
+import EditProjectModal from "@/pages/Project/components/projectdetail/EditProjectModal.jsx";
+import AddProjectMemberModal from "@/pages/Project/components/projectdetail/AddProjectMemberModal.jsx";
+import CreateTaskForMemberModal from "@/pages/Project/components/projectdetail/CreateTaskForMemberModal.jsx";
 
 import {
   ProjectDetailHeader,
@@ -21,9 +21,9 @@ import {
   ProjectMembersCard,
   ProjectTasksTable,
   ProjectLogworksTable,
-} from "../components/projects/projectdetail";
+} from "@/pages/Project/components/projectdetail";
 
-const ProjectsDetail = () => {
+const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -146,7 +146,17 @@ const ProjectsDetail = () => {
   const canEdit = isLeader(user) || String(user?.id) === String(project?.userId);
   const canAddMember = canAddProjectMember(user, project?.userId);
 
-  // ✅ staff chỉ được xem khi là member/owner của project
+  // ✅ Tính toán userTaskProjectIds để check fallback
+  const userTaskProjectIds = useMemo(() => {
+    if (!user || !projectId) return [];
+    // Lấy các task của user trong project này
+    const myTasksInProject = (tasks || []).filter(
+      (t) => String(t.userId) === String(user.id) && Number(t.projectId) === Number(projectId)
+    );
+    return myTasksInProject.length > 0 ? [projectId] : [];
+  }, [tasks, user, projectId]);
+
+  // ✅ staff chỉ được xem khi là member/owner của project HOẶC có task trong project
   const isAllowed = useMemo(() => {
     if (!user) return false;
     if (user.role === "leader") return true;
@@ -154,13 +164,17 @@ const ProjectsDetail = () => {
     // staff: là owner
     if (String(project?.userId) === String(user.id)) return true;
 
-    // staff: là member
-    return (projectMembers || []).some(
+    // staff: là member (từ project_members)
+    const isMember = (projectMembers || []).some(
       (m) =>
         String(m.projectId) === String(projectId) &&
         String(m.userId) === String(user.id)
     );
-  }, [user, project?.userId, projectMembers, projectId]);
+    if (isMember) return true;
+
+    // ✅ Fallback: staff có task trong project (dù chưa được thêm vào project_members)
+    return userTaskProjectIds.includes(projectId);
+  }, [user, project?.userId, projectMembers, projectId, userTaskProjectIds]);
 
   // ✅ guard quyền: staff không thuộc project -> toast + redirect dashboard
   useEffect(() => {
@@ -188,6 +202,31 @@ const ProjectsDetail = () => {
 
   const handleUpdatedProject = (updated) => {
     setProject(updated);
+  };
+
+  // ✅ Handler để đổi trạng thái project nhanh
+  const handleStatusChange = async (newStatus) => {
+    if (!projectId || !project) return;
+
+    try {
+      const res = await fetch(`http://localhost:3001/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...project,
+          status: newStatus,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const updated = await res.json();
+
+      setProject(updated);
+      return updated;
+    } catch (error) {
+      console.error("Failed to update project status:", error);
+      throw error;
+    }
   };
 
   const handleDelete = async () => {
@@ -266,7 +305,11 @@ const ProjectsDetail = () => {
         onUpdated={handleUpdatedProject}
       />
 
-      <ProjectStatusTimeline project={project} />
+      <ProjectStatusTimeline
+        project={project}
+        canEdit={canEdit}
+        onStatusChange={handleStatusChange}
+      />
 
       <ProjectStatistics
         totalTasks={statistics.totalTasks}
@@ -334,4 +377,4 @@ const ProjectsDetail = () => {
   );
 };
 
-export default ProjectsDetail;
+export default ProjectDetail;

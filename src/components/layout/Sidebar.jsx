@@ -12,11 +12,11 @@ import {
   ClockCircleOutlined,
 } from "@ant-design/icons";
 
-import { useProjects } from "../../lib/hooks/useProjects";
-import { useTasks } from "../../lib/hooks/useTasks";
-import { useProjectMembers } from "../../lib/hooks/useProjectMembers";
-import { useAuth } from "../../contexts/AuthContext";
-import { canManageStaff, isProjectMember } from "../../lib/utils/permissions";
+import { useProjects } from "@/lib/hooks/useProjects";
+import { useTasks } from "@/lib/hooks/useTasks";
+import { useProjectMembers } from "@/lib/hooks/useProjectMembers";
+import { useAuth } from "@/contexts/AuthContext";
+import { canManageStaff, isProjectMember } from "@/lib/utils/permissions";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -109,7 +109,7 @@ const Sidebar = () => {
             <span>
               {canManageStaff(user) ? "Task" : "My Task"}
             </span>
-           
+
             <Badge count={myTasksCount} showZero style={{ backgroundColor: "#52c41a" }} />
           </div>
         ),
@@ -156,7 +156,7 @@ const Sidebar = () => {
   }, [location.pathname]);
 
   return (
-    <aside className="w-90 bg-white border-r border-gray-200 h-full flex flex-col flex-shrink-0">
+    <aside className="bg-white border-r border-gray-200 h-full flex flex-col flex-shrink-0 shadow-lg" style={{ width: '250px' }}>
       {projectsLoading || tasksLoading || membersLoading ? (
         <div className="flex items-center justify-center h-full text-3xl">
           <span>Đang tải...</span>
@@ -169,8 +169,8 @@ const Sidebar = () => {
           items={menuItems}
           onClick={handleMenuClick}
           onOpenChange={setOpenKeys}
-          className="flex-1 border-r-0 overflow-y-auto"
-          style={{ maxHeight: "100%" }}
+          className="flex-1 border-r-0 overflow-y-auto pt-4"
+          style={{ maxHeight: "100%", background: 'transparent' }}
         />
       )}
     </aside>

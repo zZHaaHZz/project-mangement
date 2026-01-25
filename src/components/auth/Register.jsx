@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react'
 import { Input, Button, Alert } from 'antd'
+import { useNavigate } from 'react-router-dom'
 import { apiClient } from '../../lib/api'
 
-const Register = ({ onTabChange }) => {
+const Register = () => {
+  const navigate = useNavigate()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -34,7 +36,7 @@ const Register = ({ onTabChange }) => {
 
       hasRegisteredRef.current = true
       setSuccess(true)
-      onTabChange('login'); // ✅ FIX: redirect to login
+      navigate('/login'); // ✅ FIX: redirect to login
       setName('')
       setEmail('')
       setPassword('')
@@ -135,7 +137,7 @@ const Register = ({ onTabChange }) => {
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                onTabChange('login') // ✅ chuẩn key
+                navigate('/login') // ✅ chuẩn key
               }}
               className="w-full"
               size="large"
@@ -154,7 +156,7 @@ const Register = ({ onTabChange }) => {
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              onTabChange('login') // ✅ chuẩn key
+              navigate('/login') // ✅ chuẩn key
             }}
             className="text-blue-600 hover:text-blue-800 font-medium"
           >
