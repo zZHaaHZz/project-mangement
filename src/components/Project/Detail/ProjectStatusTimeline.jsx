@@ -10,10 +10,16 @@ const ProjectStatusTimeline = ({ project, canEdit, onStatusChange }) => {
     if (!project?.status) return [];
 
     const statuses = ["PLANNING", "IN_PROGRESS", "COMPLETED", "CANCELLED"];
+    const statusLabels = {
+      PLANNING: "Dự kiến",
+      IN_PROGRESS: "Đang triển khai",
+      COMPLETED: "Hoàn thành",
+      CANCELLED: "Đã hủy"
+    };
     const currentStatus = project.status;
 
     return statuses.map((status) => ({
-      content: status.replace("_", " "),
+      content: statusLabels[status] || status.replace("_", " "),
       color: status === currentStatus ? STATUS_COLOR[status] : "gray",
     }));
   }, [project?.status]);
@@ -27,7 +33,7 @@ const ProjectStatusTimeline = ({ project, canEdit, onStatusChange }) => {
 
   const handleStatusChange = async (newStatus) => {
     if (!onStatusChange) return;
-    
+
     try {
       await onStatusChange(newStatus);
       message.success("Đổi trạng thái dự án thành công");
@@ -46,7 +52,7 @@ const ProjectStatusTimeline = ({ project, canEdit, onStatusChange }) => {
         <Title level={4} style={{ margin: 0 }}>
           Trạng thái dự án
         </Title>
-        
+
         {canEdit && (
           <Dropdown
             menu={{

@@ -8,31 +8,6 @@
       "createdAt": "2025-12-30T00:00:00.000Z",
       "approved": true,
       "id": 1
-    },
-    {
-      "email": "staff1@gmail.com",
-      "password": "$2a$10$MyreiuzTeMIQCgRQvodlXOfLqu4N/6LvvkKkVLLCSmdC1Qz9L1Xc6",
-      "name": "Staff 1",
-      "role": "staff",
-      "createdAt": "2025-12-28T00:00:00.000Z",
-      "approved": true,
-      "id": 2
-    },
-    {
-      "email": "ad2@gmail.com",
-      "password": "$2a$10$OQKoL7n.XUuDAtNB0geZW.wItJUMf8pFEv8Muc.9eqC9Fr5LcjTqS",
-      "name": "admin2",
-      "role": "leader",
-      "approved": true,
-      "id": 3
-    },
-    {
-      "email": "ad21313@gmail.com",
-      "password": "$2a$10$u06l66VdQOOMvrukGoVr3./en0qqzyLENtfHlCVqoBQ/NjExlh.wK",
-      "name": "121323",
-      "role": "leader",
-      "approved": true,
-      "id": 4
     }
   ],
   "projects": [
@@ -40,7 +15,7 @@
       "id": 1,
       "name": "Project 1",
       "description": "First project",
-      "status": "CANCELLED",
+      "status": "PLANNING",
       "userId": 1,
       "createdAt": "2024-01-01T00:00:00.000Z"
     },
@@ -120,51 +95,16 @@
       "createdAt": "2024-01-01T00:00:00.000Z"
     },
     {
-      "id": 2,
-      "title": "Task 2",
-      "description": "Nhiem vu thu 2",
+      "title": "Công việc 1",
+      "description": "21231321",
       "status": "done",
-      "projectId": 1,
-      "userId": 2,
-      "createdAt": "2024-01-01T00:00:00.000Z"
-    },
-    {
-      "id": 3,
-      "title": "Task 3",
-      "description": "Nhiem vu thu 3",
-      "status": "done",
-      "projectId": 1,
-      "userId": 2,
-      "createdAt": "2024-01-01T00:00:00.000Z"
-    },
-    {
-      "title": "Test 4",
-      "description": "Gấp",
-      "status": "in-progress",
-      "projectId": 1,
-      "userId": 3,
-      "createdAt": "2026-01-14T14:40:06.862Z",
-      "id": 4
-    },
-    {
-      "title": "Cải tiến chức năng đăng nhập",
-      "description": "Làm tôi ưu đăng nhập cho người dùng mượt ",
-      "status": "todo",
-      "projectId": 10,
-      "userId": 2,
-      "createdAt": "2026-01-15T13:48:35.644Z",
-      "id": 5
-    },
-    {
-      "title": "Công việc của tôi",
-      "description": "Tạo mới công viẹc",
-      "status": "in-progress",
-      "projectId": 6,
-      "userId": 2,
-      "estimation": 5,
-      "dueDate": "2026-01-15T17:00:00.000Z",
-      "createdAt": "2026-01-21T14:34:32.156Z",
-      "id": 6
+      "projectId": 11,
+      "userId": 1,
+      "estimation": 0,
+      "startDate": "2026-02-01T01:38:29.500Z",
+      "dueDate": "2026-02-03T17:00:00.000Z",
+      "createdAt": "2026-02-01T01:38:45.693Z",
+      "id": 7
     }
   ],
   "taskStatus": [
@@ -196,45 +136,44 @@
       "createdAt": "2024-01-01T00:00:00.000Z"
     },
     {
-      "id": 2,
-      "taskId": 2,
-      "userId": 1,
-      "hours": 1,
-      "description": "Lam viec abc",
-      "date": "2024-01-01",
-      "createdAt": "2024-01-01T00:00:00.000Z"
-    },
-    {
-      "taskId": 3,
-      "userId": 2,
-      "hours": 1,
-      "note": "",
-      "createdAt": "2026-01-21T14:44:23.600Z",
-      "id": 3
-    },
-    {
-      "taskId": 6,
-      "userId": 2,
-      "hours": 4,
-      "note": "Log lần đầu",
-      "createdAt": "2026-01-21T14:44:58.776Z",
-      "id": 4
-    },
-    {
-      "taskId": 6,
-      "userId": 2,
-      "hours": 3,
-      "note": "",
-      "createdAt": "2026-01-21T14:45:17.329Z",
-      "id": 5
-    },
-    {
       "taskId": 1,
       "userId": 1,
       "hours": 4,
       "note": "",
       "createdAt": "2026-01-22T14:14:03.867Z",
       "id": 6
+    },
+    {
+      "taskId": 7,
+      "userId": 1,
+      "hours": 3,
+      "note": "",
+      "createdAt": "2026-02-01T01:39:36.930Z",
+      "id": 9
+    },
+    {
+      "taskId": 7,
+      "userId": 1,
+      "hours": 1,
+      "note": "ưqwqewq",
+      "createdAt": "2026-02-01T01:39:44.542Z",
+      "id": 10
+    },
+    {
+      "taskId": 7,
+      "userId": 1,
+      "hours": 1,
+      "note": "ưqewqewqew",
+      "createdAt": "2026-02-01T01:39:50.781Z",
+      "id": 11
+    },
+    {
+      "taskId": 7,
+      "userId": 1,
+      "hours": 1,
+      "note": "qưeqwewqew",
+      "createdAt": "2026-02-01T01:39:55.027Z",
+      "id": 12
     }
   ],
   "project_members": [
@@ -246,24 +185,10 @@
       "createdAt": "2024-01-01T00:00:00.000Z"
     },
     {
-      "id": 2,
-      "projectId": 1,
-      "userId": 2,
-      "role": "member",
-      "createdAt": "2024-01-01T00:00:00.000Z"
-    },
-    {
       "id": 3,
       "projectId": 2,
       "userId": 1,
       "role": "owner",
-      "createdAt": "2024-01-01T00:00:00.000Z"
-    },
-    {
-      "id": 4,
-      "projectId": 2,
-      "userId": 2,
-      "role": "member",
       "createdAt": "2024-01-01T00:00:00.000Z"
     },
     {
@@ -288,13 +213,6 @@
       "createdAt": "2024-01-01T00:00:00.000Z"
     },
     {
-      "id": 9,
-      "projectId": 6,
-      "userId": 2,
-      "role": "member",
-      "createdAt": "2024-01-01T00:00:00.000Z"
-    },
-    {
       "id": 11,
       "projectId": 8,
       "userId": 1,
@@ -309,46 +227,11 @@
       "id": 12
     },
     {
-      "projectId": 10,
-      "userId": 2,
-      "role": "member",
-      "createdAt": "2026-01-12T15:13:57.841Z",
-      "id": 14
-    },
-    {
-      "projectId": 1,
-      "userId": 3,
-      "role": "member",
-      "createdAt": "2026-01-14T14:25:35.769Z",
-      "id": 16
-    },
-    {
       "projectId": 11,
       "userId": 1,
       "role": "owner",
       "createdAt": "2026-01-22T13:11:29.302Z",
       "id": 17
-    },
-    {
-      "projectId": 11,
-      "userId": 3,
-      "role": "member",
-      "createdAt": "2026-01-22T13:11:29.302Z",
-      "id": 18
-    },
-    {
-      "projectId": 11,
-      "userId": 2,
-      "role": "member",
-      "createdAt": "2026-01-22T13:11:29.302Z",
-      "id": 19
-    },
-    {
-      "projectId": 11,
-      "userId": 4,
-      "role": "member",
-      "createdAt": "2026-01-22T13:11:29.302Z",
-      "id": 20
     }
   ]
 }

@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
                     setUser(savedUser);
                 } else {
                     // Không có user trong localStorage, xóa token
-                    localStorage.removeItem('token: ');
+                    localStorage.removeItem('token');
                     apiClient.setToken(null);
                 }
             }
@@ -50,10 +50,14 @@ export function AuthProvider({ children }) {
 
     const register = async (userData) => {
         try {
-            // Mặc định role là 'staff: ' nếu không được cung cấp
-            const userDataWithRole = { ...userData, role: userData.role || 'staff: ' };
-            const response = await apiClient.register(userDataWithRole);
-            setUser(response.user);
+            // Mặc định role là 'staff' nếu không được cung cấp
+            const userDataWithRole = {
+                ...userData,
+                role: userData.role || 'staff',
+                approved: false
+            };
+            await apiClient.register(userDataWithRole);
+            // Không set user ở đây vì cần được duyệt mới được login
         } catch (error) {
             console.error('Register error:', error);
             throw error;
@@ -72,8 +76,8 @@ export function AuthProvider({ children }) {
         register,
         logout,
         isAuthenticated: !!user,
-        isLeader: user?.role === 'leader: ',
-        isStaff: user?.role === 'staff: ',
+        isLeader: user?.role === 'leader',
+        isStaff: user?.role === 'staff',
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

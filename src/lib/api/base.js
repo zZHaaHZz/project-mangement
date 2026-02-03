@@ -22,7 +22,7 @@ export class BaseApiClient {
   async request(endpoint, options = {}) {
     // ✅ FIX: remove spaces
     const url = `${this.baseURL}${endpoint}`;
-    console.log("[FETCH]", url);
+    // console.log("[FETCH]", url);
 
     const headers = {
       "Content-Type": "application/json",
@@ -52,7 +52,7 @@ export class BaseApiClient {
             errorMessage = text || errorMessage;
           }
         }
-      } catch {}
+      } catch { }
 
       if (response.status === 400) errorMessage = "Dữ liệu không hợp lệ";
       else if (response.status === 404) errorMessage = "Không tìm thấy dữ liệu";

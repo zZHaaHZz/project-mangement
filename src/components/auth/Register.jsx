@@ -30,8 +30,9 @@ const Register = () => {
         name,
         email,
         password,
-        role: 'leader',
-        approved: true, // ✅ FIX: thiếu key/value approved
+        role: 'staff',
+        approved: false,
+        createdAt: new Date().toISOString(),
       })
 
       hasRegisteredRef.current = true
@@ -107,8 +108,8 @@ const Register = () => {
 
         {success && (
           <Alert
-            title="Đăng ký thành công!"   // ✅ FIX: message -> title
-            description="Bạn có thể đăng nhập ngay. Khi đăng nhập lần đầu, bạn sẽ được yêu cầu tạo công ty của mình."
+            title="Đăng ký thành công!"
+            description="Tài khoản của bạn đã được tạo. Vui lòng đợi Leader phê duyệt trước khi đăng nhập."
             type="success"
             showIcon
             className="mb-4"
@@ -129,7 +130,7 @@ const Register = () => {
         ) : (
           <div className="space-y-3">
             <div className="text-center text-gray-600 text-sm mb-4">
-              Bạn có thể đăng nhập ngay hoặc quay lại sau.
+              Bạn sẽ nhận được thông báo khi tài khoản được kích hoạt.
             </div>
 
             <Button

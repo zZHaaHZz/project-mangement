@@ -1,0 +1,243 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { Modal, Form, Input, Select, message } from "antd";
+
+const { TextArea } = Input;
+
+const CreateProjectModal = ({ open, onClose, onCreated, currentUserId, users = [] }) => {
+    const [form] = Form.useForm();
+    const [submitting, setSubmitting] = useState(false);
+
+    const memberOptions = useMemo(() => {
+        return (users || [])
+            .filter((u) => String(u.id) !== String(currentUserId))
+            .map((u) => ({
+                label: `${u.name} (${u.email})`,
+                value: u.id,
+            }));
+    }, [users, currentUserId]);
+
+    useEffect(() => {
+        if (open) form.resetFields();
+    }, [open, form]);
+
+    const handleOk = async () => {
+        try {
+            const values = await form.validateFields();
+            setSubmitting(true);
+
+            // 1) create project
+            const projectPayload = {
+                name: values.name,
+                description: values.description || "",
+                status: values.status,
+                userId: Number(currentUserId),
+                createdAt: new Date().toISOString(),
+            };
+
+            const projectRes = await fetch("http://localhost:3001/projects", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(projectPayload),
+            });
+
+            if (!projectRes.ok) throw new Error(`HTTP ${projectRes.status} create project`);
+            const createdProject = await projectRes.json();
+
+            // 2) add project_members: owner + members
+            const now = new Date().toISOString();
+            const selectedMemberIds = values.memberIds || [];
+
+            const requests = [
+                fetch("http://localhost:3001/project_members", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        projectId: createdProject.id,
+                        userId: Number(currentUserId),
+                        role: "owner",
+                        createdAt: now,
+                    }),
+                }),
+                ...selectedMemberIds.map((uid) =>
+                    fetch("http://localhost:3001/project_members", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            projectId: createdProject.id,
+                            userId: Number(uid),
+                            role: "member",
+                            createdAt: now,
+                        }),
+                    })
+                ),
+            ];
+
+            const results = await Promise.all(requests);
+            const failed = results.find((r) => !r.ok);
+            if (failed) throw new Error(`HTTP ${failed.status} add members`);
+
+            message.success("Tạo project thành công");
+            onCreated?.(createdProject);
+            onClose?.();
+        } catch (err) {
+            if (String(err?.message || "").startsWith("HTTP")) {
+                message.error("Tạo project/thêm thành viên thất bại");
+            }
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <Modal
+            open={open}
+            onCancel={onClose}
+            footer={null}
+            closable={false}
+            width={700}
+            centered
+            className="task-modal-charcoal p-0"
+            styles={{ body: { padding: 0 }, content: { padding: 0, borderRadius: '12px', overflow: 'hidden' } }}
+        >
+            <div className="relative w-full bg-white flex flex-col border border-gray-100 font-sans">
+                {/* Header */}
+                <div className="px-8 pt-8 pb-4 flex justify-between items-start">
+                    <div className="flex flex-col gap-1">
+                        <h1 className="text-[#333] tracking-tight text-2xl font-bold leading-tight">Tạo Project Mới</h1>
+                        <p className="text-gray-500 text-sm font-normal">Thêm dự án mới vào không gian làm việc của bạn</p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-[#333] transition-colors border-none bg-transparent cursor-pointer"
+                    >
+                        <span className="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div className="px-8 py-4 space-y-6 overflow-y-auto max-h-[70vh] custom-scrollbar border-t border-gray-50">
+                    <Form form={form} layout="vertical" requiredMark={false}>
+                        <Form.Item
+                            label={<span className="text-[#333] text-sm font-semibold">Tên project <span className="text-primary">*</span></span>}
+                            name="name"
+                            rules={[{ required: true, message: "Vui lòng nhập tên project" }]}
+                            className="mb-6"
+                        >
+                            <Input
+                                placeholder="VD: Hệ thống quản lý dự án"
+                                className="w-full rounded-lg text-[#333] focus:outline-0 focus:ring-2 focus:ring-primary/20 focus:border-primary border border-transparent bg-[#F3F4F6] h-12 placeholder:text-gray-400 px-4 text-base font-normal transition-all"
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            label={<span className="text-[#333] text-sm font-semibold">Mô tả</span>}
+                            name="description"
+                            className="mb-6"
+                        >
+                            <TextArea
+                                rows={4}
+                                placeholder="Mô tả ngắn gọn về dự án..."
+                                className="w-full resize-none rounded-lg text-[#333] focus:outline-0 focus:ring-2 focus:ring-primary/20 focus:border-primary border border-transparent bg-[#F3F4F6] min-h-[120px] placeholder:text-gray-400 p-4 text-base font-normal transition-all"
+                            />
+                        </Form.Item>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <Form.Item
+                                label={<span className="text-[#333] text-sm font-semibold">Trạng thái <span className="text-primary">*</span></span>}
+                                name="status"
+                                initialValue="PLANNING"
+                                rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}
+                                className="mb-0"
+                            >
+                                <Select
+                                    className="task-select-charcoal h-12"
+                                    options={[
+                                        { value: "PLANNING", label: "Dự kiến" },
+                                        { value: "IN_PROGRESS", label: "Đang triển khai" },
+                                        { value: "COMPLETED", label: "Hoàn thành" },
+                                        { value: "CANCELLED", label: "Đã hủy" },
+                                    ]}
+                                    suffixIcon={<span className="material-symbols-outlined text-gray-400">unfold_more</span>}
+                                />
+                            </Form.Item>
+
+                            <Form.Item
+                                label={<span className="text-[#333] text-sm font-semibold">Thành viên tham gia</span>}
+                                name="memberIds"
+                                className="mb-0"
+                            >
+                                <Select
+                                    mode="multiple"
+                                    allowClear
+                                    className="task-select-charcoal-multi min-h-[48px]"
+                                    placeholder="Chọn thành viên"
+                                    options={memberOptions}
+                                    optionFilterProp="label"
+                                    suffixIcon={<span className="material-symbols-outlined text-gray-400">group</span>}
+                                />
+                            </Form.Item>
+                        </div>
+                    </Form>
+                </div>
+
+                {/* Footer */}
+                <div className="px-8 py-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50">
+                    <button
+                        onClick={onClose}
+                        className="px-6 py-2.5 rounded-lg text-gray-600 font-semibold border border-gray-300 bg-white hover:bg-gray-100 hover:text-[#333] transition-all cursor-pointer"
+                    >
+                        Hủy
+                    </button>
+                    <button
+                        onClick={handleOk}
+                        disabled={submitting}
+                        className="px-10 py-2.5 bg-primary rounded-lg text-white font-bold shadow-lg shadow-primary/25 hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-2 border-none cursor-pointer disabled:opacity-50"
+                    >
+                        {submitting ? "Đang xử lý..." : "Tạo Project"}
+                    </button>
+                </div>
+            </div>
+
+            <style>{`
+                .task-modal-charcoal .ant-modal-content {
+                    padding: 0 !important;
+                    background: white !important;
+                    box-shadow: none !important;
+                }
+                
+                .task-select-charcoal .ant-select-selector,
+                .task-select-charcoal-multi .ant-select-selector {
+                    background-color: #F3F4F6 !important;
+                    border: 1px solid transparent !important;
+                    color: #333 !important;
+                    border-radius: 8px !important;
+                    padding: 0 16px !important;
+                    font-weight: 400 !important;
+                    transition: all 0.2s !important;
+                }
+ 
+                .task-select-charcoal.ant-select-focused .ant-select-selector,
+                .task-select-charcoal-multi.ant-select-focused .ant-select-selector {
+                    border-color: #FF4081 !important;
+                    box-shadow: 0 0 0 2px rgba(255, 64, 129, 0.2) !important;
+                    background-color: white !important;
+                }
+ 
+                .ant-modal-mask {
+                    background-color: rgba(255, 255, 255, 0.45) !important;
+                    backdrop-filter: blur(8px) !important;
+                }
+ 
+                .task-select-charcoal-multi .ant-select-selection-item {
+                    background: #fff !important;
+                    border: 1px solid #e5e7eb !important;
+                    border-radius: 6px !important;
+                    color: #333 !important;
+                    font-weight: 500 !important;
+                }
+            `}</style>
+        </Modal>
+    );
+};
+
+export default CreateProjectModal;

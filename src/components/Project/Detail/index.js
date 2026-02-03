@@ -1,5 +1,6 @@
-// Export tất cả components của project detail để dễ import
 export { default as ProjectDetailHeader } from './ProjectDetailHeader';
+export { default as ProjectBreadcrumbs } from './ProjectBreadcrumbs';
+export { default as ProjectTabs } from './ProjectTabs';
 export { default as ProjectStatusTimeline } from './ProjectStatusTimeline';
 export { default as ProjectStatistics } from './ProjectStatistics';
 export { default as ProjectInfoCard } from './ProjectInfoCard';

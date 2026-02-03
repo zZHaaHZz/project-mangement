@@ -1,131 +1,37 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Collapse, Tag, Button, List, Modal, InputNumber, Input, Space, Typography, Drawer, Descriptions, Avatar, Divider, Empty, Dropdown, message, Switch } from "antd";
-import { ClockCircleOutlined, SettingOutlined, UserOutlined, CalendarOutlined, FileTextOutlined, ProjectOutlined, EllipsisOutlined, CheckCircleOutlined } from "@ant-design/icons";
-
+import { message, Tooltip, Avatar } from "antd";
+import { PlusOutlined, FilterOutlined } from "@ant-design/icons";
 import { useAuth } from "@/contexts/AuthContext";
-import { TasksApi } from "@/lib/api/tasks";
-import { ProjectsApi } from "@/lib/api/projects";
-import { ProjectMembersApi } from "@/lib/api/project-members";
-import { LogworksApi } from "@/lib/api/logworks";
-
-import LogworkModal from "./components/LogworkModal";
-import TaskDetailModal from "./components/TaskDetailModal";
-
-const { Text, Title, Paragraph } = Typography;
+import { apiClient } from "@/lib/api";
+import { useTasks } from "@/lib/hooks/useTasks";
+import { useProjects } from "@/lib/hooks/useProjects";
+import { useLogworks } from "@/lib/hooks/useLogworks";
+import { useProjectMembers } from "@/lib/hooks/useProjectMembers";
+import TaskDetailModal from "@/components/Task/TaskDetailModal";
+import LogworkModal from "@/components/Task/LogworkModal";
+import CreateTaskForMemberModal from "@/components/Project/Detail/CreateTaskForMemberModal";
+import { useLayout } from "@/contexts/LayoutContext";
 
 const TaskPage = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { tasks = [], fetchTasks } = useTasks();
+  const { projects = [] } = useProjects();
+  const { logworks = [] } = useLogworks();
+  const { members = [] } = useProjectMembers();
 
-  const [tasks, setTasks] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [logworks, setLogworks] = useState([]);
-  const [myProjectIds, setMyProjectIds] = useState([]); // staff membership
-
-  // Task Detail state
+  const [activeTab, setActiveTab] = useState("all");
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailTask, setDetailTask] = useState(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
 
-  // ✅ Filter state cho completed tasks
-  const [showCompletedTasks, setShowCompletedTasks] = useState(true);
-
-  const isLeader = user?.role === "leader";
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
-
-      try {
-        const tasksApi = new TasksApi();
-        const projectsApi = new ProjectsApi();
-        const projectMembersApi = new ProjectMembersApi();
-        const logworksApi = new LogworksApi();
-
-        const [tasksData, projectsData, logworksData] = await Promise.all([
-          tasksApi.getTasks(),
-          projectsApi.getProjects(),
-          logworksApi.getLogworks(),
-        ]);
-
-        setTasks(Array.isArray(tasksData) ? tasksData : []);
-        setProjects(Array.isArray(projectsData) ? projectsData : []);
-        setLogworks(Array.isArray(logworksData) ? logworksData : []);
-
-        // staff: lấy list project đã tham gia
-        if (!isLeader && user?.id) {
-          const members = await projectMembersApi.getProjectMembersByUser(user.id);
-          const ids = (Array.isArray(members) ? members : []).map((m) => m.projectId);
-          setMyProjectIds(ids);
-        } else {
-          setMyProjectIds([]);
-        }
-
-      } catch (err) {
-        console.error("fetchData error:", err);
-      }
-    };
-
-    fetchData();
-  }, [user?.id, isLeader, user]); // Added user dependency
-
-  // staff: chỉ task của mình
-  const visibleTasks = useMemo(() => {
-    const safeTasks = Array.isArray(tasks) ? tasks : [];
-    if (isLeader) return safeTasks;
-    // Ensure accurate filtering by userId
-    return safeTasks.filter((t) => String(t.userId) === String(user?.id));
-  }, [isLeader, tasks, user?.id]);
-
-  // ✅ Filter tasks: ẩn task đã done nếu showCompletedTasks = false
-  const filteredVisibleTasks = useMemo(() => {
-    if (showCompletedTasks) return visibleTasks;
-    return visibleTasks.filter((t) => t.status !== "done");
-  }, [visibleTasks, showCompletedTasks]);
-
-  // group tasks theo projectId (sử dụng filteredVisibleTasks)
-  const tasksByProject = useMemo(() => {
-    const map = {};
-    for (const t of filteredVisibleTasks) {
-      if (!map[t.projectId]) map[t.projectId] = [];
-      map[t.projectId].push(t);
-    }
-    return map;
-  }, [filteredVisibleTasks]);
-
-  // ✅ Tính toán số task đã done để hiển thị
-  const completedTasksCount = useMemo(() => {
-    return visibleTasks.filter((t) => t.status === "done").length;
-  }, [visibleTasks]);
-
-  // ✅ Tính toán userTaskProjectIds để check fallback
-  const userTaskProjectIds = useMemo(() => {
-    if (!user) return [];
-    const myTasks = tasks.filter((t) => String(t.userId) === String(user.id));
-    return Array.from(new Set(myTasks.map((t) => t.projectId)));
-  }, [tasks, user]);
-
-  // staff: chỉ hiện project mình tham gia (từ project_members) HOẶC có task trong project
-  const visibleProjects = useMemo(() => {
-    const safeProjects = Array.isArray(projects) ? projects : [];
-    if (isLeader) return safeProjects;
-
-    return safeProjects.filter((p) => {
-      // ✅ Check 1: Là member (từ project_members)
-      const isMember = myProjectIds.includes(p.id);
-      if (isMember) return true;
-
-      // ✅ Check 2: Có task trong project (fallback)
-      const hasMyTask = userTaskProjectIds.includes(p.id);
-      return hasMyTask;
-    });
-  }, [isLeader, projects, myProjectIds, userTaskProjectIds]);
-
-  // logwork modal
+  // Logwork state
   const [logworkOpen, setLogworkOpen] = useState(false);
   const [selectedTaskLog, setSelectedTaskLog] = useState(null);
   const [hours, setHours] = useState(1);
   const [note, setNote] = useState("");
+
+  const isLeader = user?.role === "leader";
 
   const openLogwork = (task, e) => {
     e?.stopPropagation?.();
@@ -138,7 +44,6 @@ const TaskPage = () => {
   const submitLogwork = async () => {
     try {
       if (!selectedTaskLog) return;
-      const logworksApi = new LogworksApi();
       const newLogwork = {
         taskId: selectedTaskLog.id,
         userId: user?.id,
@@ -147,160 +52,323 @@ const TaskPage = () => {
         createdAt: new Date().toISOString()
       };
 
-      await logworksApi.createLogwork(newLogwork);
-
-      // Update local state to reflect changes immediately
-      const updatedLogworks = await logworksApi.getLogworks();
-      setLogworks(Array.isArray(updatedLogworks) ? updatedLogworks : []);
-
+      await apiClient.createLogwork(newLogwork);
+      message.success("Ghi nhận logwork thành công");
       setLogworkOpen(false);
+      // Refresh data
+      fetchTasks();
     } catch (error) {
-      console.error("Failed to logwork", error);
+      message.error("Không thể lưu logwork");
     }
   };
+
+  // Filter tasks based on role
+  const roleFilteredTasks = useMemo(() => {
+    if (isLeader) return tasks;
+    return tasks.filter((t) => String(t.userId) === String(user?.id));
+  }, [tasks, isLeader, user]);
+
+  // Filter tasks based on active tab
+  const tabFilteredTasks = useMemo(() => {
+    if (activeTab === "all") return roleFilteredTasks;
+    if (activeTab === "in-progress") return roleFilteredTasks.filter(t => t.status === "in-progress" || t.status === "todo");
+    if (activeTab === "completed") return roleFilteredTasks.filter(t => t.status === "done");
+    if (activeTab === "archived") return roleFilteredTasks.filter(t => t.status === "cancelled");
+    return roleFilteredTasks;
+  }, [roleFilteredTasks, activeTab]);
+
+  // Filter based on search text
+  const visibleTasks = useMemo(() => {
+    const q = searchText.trim().toLowerCase();
+    if (!q) return tabFilteredTasks;
+    return tabFilteredTasks.filter(t =>
+      (t.title || "").toLowerCase().includes(q) ||
+      (t.description || "").toLowerCase().includes(q)
+    );
+  }, [tabFilteredTasks, searchText]);
+
+  // Group tasks by project
+  const tasksByProject = useMemo(() => {
+    const map = {};
+    visibleTasks.forEach((t) => {
+      if (!map[t.projectId]) map[t.projectId] = [];
+      map[t.projectId].push(t);
+    });
+    return map;
+  }, [visibleTasks]);
+
+  // Get project details for grouped tasks
+  const relevantProjects = useMemo(() => {
+    const projectIds = Object.keys(tasksByProject).map(Number);
+    return projects.filter(p => projectIds.includes(p.id));
+  }, [projects, tasksByProject]);
+
+  // Statistics
+  const stats = useMemo(() => {
+    const total = roleFilteredTasks.length;
+    const completed = roleFilteredTasks.filter(t => t.status === "done").length;
+    const pending = total - completed;
+    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    return {
+      total,
+      completed,
+      pending,
+      rate
+    };
+  }, [roleFilteredTasks]);
 
   const openDetail = (task) => {
     setDetailTask(task);
     setDetailOpen(true);
   };
 
-  const renderStatus = (status) => {
-    if (status === "done") return <Tag color="green" icon={<CheckCircleOutlined />}>Done</Tag>;
-    if (status === "in-progress") return <Tag color="blue">In Progress</Tag>;
-    if (status === "review") return <Tag color="purple">Review</Tag>;
-    return <Tag color="default">To Do</Tag>;
-  };
+  const [users, setUsers] = useState([]);
+  useEffect(() => {
+    apiClient.getUsers().then(data => {
+      setUsers(Array.isArray(data) ? data : (data?.data ?? []));
+    });
+  }, []);
 
-  const genExtra = (p) => {
-    if (isLeader) {
-      return (
-        <SettingOutlined
-          onClick={(e) => {
-            e.stopPropagation();
-            // Navigate to project settings
-            navigate(`/projects/${p.id}/settings`);
-          }}
-        />
-      )
-    }
-    return null;
-  };
+  const userMap = useMemo(() => {
+    const map = new Map();
+    users.forEach(u => map.set(u.id, u));
+    return map;
+  }, [users]);
 
-  const items = visibleProjects.map((p) => {
-    const projectTasks = tasksByProject[p.id] || [];
+  const { setHeaderActions } = useLayout();
 
-    return {
-      key: String(p.id),
-      label: (
-        <Space size={12}>
-          <Text strong>{p.name}</Text>
-          <Tag>{projectTasks.length} tasks</Tag>
-        </Space>
-      ),
-      extra: genExtra(p),
-      style: {
-        border: '1px solid #e5e7eb',
-        borderRadius: '8px',
-        marginBottom: '12px',
-        padding: '8px 12px',
-        backgroundColor: '#ffffff'
-      },
-      children: (
-        <List
-          dataSource={projectTasks}
-          locale={{ emptyText: <Empty description="Không có task nào" image={Empty.PRESENTED_IMAGE_SIMPLE} /> }}
-          renderItem={(task) => (
-            <List.Item
-              className={`hover:bg-gray-50 transition-colors ${task.status === "done" ? "opacity-75" : ""}`}
-              style={{
-                cursor: "pointer",
-                padding: "12px 16px",
-                borderRadius: "8px",
-                border: "1px solid #f0f0f0",
-                marginBottom: "8px",
-                backgroundColor: task.status === "done" ? "#f6ffed" : "transparent"
-              }}
-              onClick={() => openDetail(task)}
-              actions={[
-                task.status !== "done" && (
-                  <Button
-                    key="logwork"
-                    icon={<ClockCircleOutlined />}
-                    onClick={(e) => openLogwork(task, e)}
-                    size="small"
-                  >
-                    Logwork
-                  </Button>
-                ),
-              ].filter(Boolean)}
-            >
-              <Space direction="vertical" size={2} style={{ width: '100%' }}>
-                <Space size={8} className="w-full justify-between">
-                  <Text
-                    strong
-                    style={{
-                      textDecoration: task.status === "done" ? "line-through" : "none",
-                      color: task.status === "done" ? "#8c8c8c" : undefined
-                    }}
-                  >
-                    {task.title}
-                  </Text>
-                  {renderStatus(task.status)}
-                </Space>
-                <Space size={16}>
-                  <Space size={4}>
-                    <UserOutlined style={{ fontSize: 12, color: '#8c8c8c' }} />
-                    <Text type="secondary" style={{ fontSize: 12 }}>ID: {task.userId}</Text>
-                  </Space>
-                  {task.dueDate && (
-                    <Space size={4}>
-                      <CalendarOutlined style={{ fontSize: 12, color: '#8c8c8c' }} />
-                      <Text type="secondary" style={{ fontSize: 12 }}>{new Date(task.dueDate).toLocaleDateString()}</Text>
-                    </Space>
-                  )}
-                </Space>
-              </Space>
-            </List.Item>
-          )}
-        />
-      ),
-    };
-  });
+  useEffect(() => {
+    setHeaderActions(
+      <div className="flex items-center gap-6 w-full">
+        <div className="relative w-full max-w-md">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
+            search
+          </span>
+          <input
+            className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-lg py-2 pl-10 pr-4 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-medium"
+            placeholder="Tìm kiếm công việc..."
+            type="text"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+        </div>
+        {isLeader && (
+          <button
+            onClick={() => setCreateOpen(true)}
+            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold py-2 px-5 rounded-lg transition-all shadow-lg shadow-primary/20 cursor-pointer whitespace-nowrap"
+          >
+            <span className="material-symbols-outlined text-lg">add</span>
+            <span>Thêm task mới</span>
+          </button>
+        )}
+      </div>
+    );
+    return () => setHeaderActions(null);
+  }, [searchText, isLeader, setHeaderActions]);
 
   return (
-    <div style={{ padding: 24, background: '#fff', borderRadius: 8, minHeight: '100%' }}>
-      <div className="flex justify-between items-center mb-6">
-        <Title level={3} style={{ margin: 0 }}>My Tasks</Title>
-        <div className="flex items-center gap-3">
-          {completedTasksCount > 0 && (
-            <Text type="secondary" className="text-sm">
-              {completedTasksCount} task đã hoàn thành
-            </Text>
+    <main className="flex-1 flex flex-col bg-white min-h-screen">
+      <div className="layout-content-container flex flex-col max-w-[1200px] mx-auto flex-1 w-full px-4 md:px-8 py-8">
+
+        {/* Page Heading (Breadcrumbs styled) */}
+        <div className="flex flex-col gap-1 mb-8">
+          <h1 className="text-[#333] text-4xl font-extrabold leading-tight tracking-tight">Công việc</h1>
+          <p className="text-gray-500 text-base font-normal">Theo dõi tiến độ và tối ưu hóa quy trình làm việc của bạn.</p>
+        </div>
+
+        {/* Tabs Section */}
+        <div className="mb-8">
+          <div className="flex border-b border-gray-200 gap-8">
+            {[
+              { id: "all", label: "Tất cả" },
+              { id: "in-progress", label: "Đang làm" },
+              { id: "completed", label: "Hoàn thành" },
+              { id: "archived", label: "Lưu trữ" }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex flex-col items-center justify-center border-b-2 pb-3 pt-2 transition-all bg-transparent cursor-pointer border-none ${activeTab === tab.id
+                  ? "border-primary text-[#333]"
+                  : "border-transparent text-gray-400 hover:text-[#333]"
+                  }`}
+              >
+                <p className={`text-sm tracking-tight ${activeTab === tab.id ? "font-bold" : "font-semibold"}`}>
+                  {tab.label}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Task Groups by Project */}
+        <div className="space-y-12">
+          {relevantProjects.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              <span className="material-symbols-outlined text-6xl text-gray-300 mb-4">task_alt</span>
+              <p className="text-gray-400 text-lg font-medium">Không tìm thấy công việc nào trong danh sách này</p>
+            </div>
+          ) : (
+            relevantProjects.map((project) => {
+              const projectTasks = tasksByProject[project.id] || [];
+              const pendingCount = projectTasks.filter(t => t.status !== "done").length;
+
+              return (
+                <div key={project.id} className="flex flex-col gap-4">
+                  {/* Section Header */}
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-[#333] text-xl font-bold tracking-tight">{project.name}</h2>
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-wider">
+                      {pendingCount} task chưa hoàn thành
+                    </span>
+                  </div>
+
+                  {/* Task Table */}
+                  <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-200">
+                          <th className="px-6 py-4 text-[#333] text-xs font-bold uppercase tracking-widest">Tên công việc</th>
+                          <th className="px-6 py-4 text-[#333] text-xs font-bold uppercase tracking-widest text-center">Trạng thái</th>
+                          <th className="px-6 py-4 text-[#333] text-xs font-bold uppercase tracking-widest text-center">Ưu tiên</th>
+                          <th className="px-6 py-4 text-[#333] text-xs font-bold uppercase tracking-widest">Thành viên</th>
+                          <th className="px-6 py-4 text-[#333] text-xs font-bold uppercase tracking-widest text-right">Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {projectTasks.map((task) => {
+                          const assignee = userMap.get(task.userId);
+                          return (
+                            <tr key={task.id} className="hover:bg-gray-50 transition-colors group">
+                              <td className="px-6 py-5">
+                                <div className="flex flex-col">
+                                  <span className="text-[#333] font-semibold text-sm group-hover:text-primary transition-colors">
+                                    {task.title}
+                                  </span>
+                                  <span className="text-gray-400 text-xs mt-1 font-medium line-clamp-1">
+                                    {task.description || "Không có mô tả"}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-5 text-center">
+                                <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${task.status === "done" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                                  task.status === "in-progress" ? "bg-blue-50 text-blue-600 border border-blue-100" :
+                                    "bg-gray-50 text-gray-500 border border-gray-100"
+                                  }`}>
+                                  <span className={`size-1.5 rounded-full mr-2 ${task.status === "done" ? "bg-emerald-500" :
+                                    task.status === "in-progress" ? "bg-blue-500" :
+                                      "bg-gray-400"
+                                    }`}></span>
+                                  {task.status === "done" ? "Hoàn thành" :
+                                    task.status === "in-progress" ? "Đang làm" : "Cần làm"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-5 text-center">
+                                <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${task.id % 3 === 0 ? "bg-pink-50 text-pink-600 border border-pink-100" :
+                                  task.id % 3 === 1 ? "bg-amber-50 text-amber-600 border border-amber-100" :
+                                    "bg-slate-50 text-slate-600 border border-slate-100"
+                                  }`}>
+                                  {task.id % 3 === 0 ? "Cao" :
+                                    task.id % 3 === 1 ? "Trung bình" : "Thấp"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-5">
+                                <div className="flex -space-x-2">
+                                  {assignee ? (
+                                    <Tooltip title={assignee.name}>
+                                      <Avatar
+                                        size={32}
+                                        src={assignee.avatar}
+                                        className="border-2 border-white shadow-sm"
+                                      >
+                                        {assignee.name[0]}
+                                      </Avatar>
+                                    </Tooltip>
+                                  ) : (
+                                    <Avatar size={32} icon="?" className="border-2 border-white shadow-sm" />
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-5 text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Tooltip title="Ghi nhận công việc">
+                                    <button
+                                      onClick={(e) => openLogwork(task, e)}
+                                      className="size-9 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all border-none cursor-pointer"
+                                    >
+                                      <span className="material-symbols-outlined text-xl">history</span>
+                                    </button>
+                                  </Tooltip>
+                                  <button
+                                    onClick={() => openDetail(task)}
+                                    className="px-4 h-9 flex items-center justify-center rounded-lg bg-gray-50 text-gray-600 font-bold text-sm hover:bg-gray-100 transition-all border-none cursor-pointer"
+                                  >
+                                    Chi tiết
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })
           )}
-          <Space>
-            <Text className="text-sm">Hiển thị task đã hoàn thành:</Text>
-            <Switch
-              checked={showCompletedTasks}
-              onChange={setShowCompletedTasks}
-              checkedChildren="Có"
-              unCheckedChildren="Không"
-            />
-          </Space>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="mt-16 pb-12">
+          <h2 className="text-[#333] text-xl font-bold tracking-tight mb-6">Thống kê dự án</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-500 text-sm font-medium">Tỉ lệ hoàn thành</span>
+                <span className="material-symbols-outlined text-emerald-500">trending_up</span>
+              </div>
+              <div className="text-2xl font-black text-[#333]">{stats.rate}%</div>
+              <div className="w-full bg-gray-100 rounded-full h-1.5 mt-4">
+                <div
+                  className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
+                  style={{ width: `${stats.rate}%` }}
+                ></div>
+              </div>
+            </div>
+            <div className="p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-500 text-sm font-medium">Công việc đang chờ</span>
+                <span className="material-symbols-outlined text-primary">data_exploration</span>
+              </div>
+              <div className="text-2xl font-black text-[#333]">{stats.pending}</div>
+              <p className="text-xs text-gray-400 mt-4 font-medium">Trên tổng số {stats.total} công việc</p>
+            </div>
+            <div className="p-6 bg-primary rounded-xl shadow-lg shadow-primary/20 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-white/80 text-sm font-medium">Hiệu suất đội ngũ</span>
+                <span className="material-symbols-outlined text-white">bolt</span>
+              </div>
+              <div className="text-2xl font-black text-white">4.2 <span className="text-sm font-normal text-white/70">task/ngày</span></div>
+              <p className="text-xs text-white/80 mt-4 font-medium">Quy trình tối ưu</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {visibleProjects.length === 0 ? (
-        <Empty description="Bạn chưa tham gia project nào hoặc chưa có project nào được tạo." />
-      ) : (
-        <Collapse
-          // Không mở project nào mặc định, người dùng tự click để mở
-          defaultActiveKey={[]}
-          expandIconPlacement="start"
-          items={items}
-          ghost={false}
-          className="project-collapse"
-        />
-      )}
+      <TaskDetailModal
+        open={detailOpen}
+        onCancel={() => setDetailOpen(false)}
+        task={detailTask}
+        projects={projects}
+        logworks={logworks}
+        onStatusUpdated={async (newStatus) => {
+          await fetchTasks();
+          setDetailTask(prev => ({ ...prev, status: newStatus }));
+        }}
+        onOpenLogwork={openLogwork}
+      />
 
       <LogworkModal
         open={logworkOpen}
@@ -313,23 +381,18 @@ const TaskPage = () => {
         setNote={setNote}
       />
 
-      <TaskDetailModal
-        open={detailOpen}
-        onCancel={() => setDetailOpen(false)}
-        task={detailTask}
-        projects={projects}
-        logworks={logworks}
-        renderStatus={renderStatus}
-        onStatusUpdated={async (newStatus) => {
-          // Refresh tasks
-          const tasksApi = new TasksApi();
-          const allTasks = await tasksApi.getTasks();
-          setTasks(Array.isArray(allTasks) ? allTasks : []);
-          setDetailTask(prev => ({ ...prev, status: newStatus }));
+      <CreateTaskForMemberModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={() => {
+          fetchTasks();
+          setCreateOpen(false);
         }}
-        onOpenLogwork={openLogwork}
+        projectId={projects[0]?.id} // Default project context
+        projectMembers={members} // All members to allow assignee selection
+        userMap={userMap}
       />
-    </div>
+    </main>
   );
 };
 

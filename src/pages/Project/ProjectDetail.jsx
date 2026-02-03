@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { Row, Col, Divider, Spin, message } from "antd";
+import { Row, Col, Divider, Spin, message, Dropdown } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,19 +9,24 @@ import { useLogworks } from "@/lib/hooks/useLogworks";
 import { usersApi, projectMembersApi } from "@/lib/api";
 import { canAddProjectMember, isLeader } from "@/lib/utils/permissions";
 
-import EditProjectModal from "@/pages/Project/components/projectdetail/EditProjectModal.jsx";
-import AddProjectMemberModal from "@/pages/Project/components/projectdetail/AddProjectMemberModal.jsx";
-import CreateTaskForMemberModal from "@/pages/Project/components/projectdetail/CreateTaskForMemberModal.jsx";
+import EditProjectModal from "@/components/Project/Detail/EditProjectModal.jsx";
+import AddProjectMemberModal from "@/components/Project/Detail/AddProjectMemberModal.jsx";
+import CreateTaskForMemberModal from "@/components/Project/Detail/CreateTaskForMemberModal.jsx";
 
 import {
   ProjectDetailHeader,
+  ProjectBreadcrumbs,
+  ProjectTabs,
   ProjectStatusTimeline,
   ProjectStatistics,
   ProjectInfoCard,
   ProjectMembersCard,
   ProjectTasksTable,
   ProjectLogworksTable,
-} from "@/pages/Project/components/projectdetail";
+} from "@/components/Project/Detail";
+import { useLayout } from "@/contexts/LayoutContext";
+import { ArrowLeftOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Button, Popconfirm } from "antd";
 
 const ProjectDetail = () => {
   const { id } = useParams();
@@ -29,7 +34,7 @@ const ProjectDetail = () => {
 
   const { user } = useAuth();
   const { projects, deleteProject } = useProjects();
-  const { tasks, loading: tasksLoading } = useTasks();
+  const { tasks, loading: tasksLoading, fetchTasks } = useTasks();
   const { logworks, loading: logworksLoading } = useLogworks();
 
   const projectId = id ? Number(id) : null;
@@ -139,8 +144,16 @@ const ProjectDetail = () => {
     const uniqueUserIds = new Set((projectMembers || []).map((m) => String(m.userId)));
     const totalMembers = uniqueUserIds.size;
 
-    return { totalTasks, completedTasks, totalHours, totalMembers };
+    const overdueTasks = projectTasks.filter(t =>
+      t.status !== "done" &&
+      t.dueDate &&
+      new Date(t.dueDate) < new Date()
+    );
+
+    return { totalTasks, completedTasks, totalHours, totalMembers, overdueCount: overdueTasks.length };
   }, [projectTasks, projectLogworks, projectMembers]);
+
+  const isAtRisk = statistics.overdueCount > 0;
 
   // 9) permissions
   const canEdit = isLeader(user) || String(user?.id) === String(project?.userId);
@@ -198,8 +211,6 @@ const ProjectDetail = () => {
   }, [user, projectId, loadingMembers, project, isAllowed, navigate]);
 
   // 10) handlers
-  const handleEdit = () => setOpenEdit(true);
-
   const handleUpdatedProject = (updated) => {
     setProject(updated);
   };
@@ -273,44 +284,56 @@ const ProjectDetail = () => {
     setOpenCreateTask(true);
   };
 
-  // ✅ render
+  // 11) Render
   if (loadingMembers) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-screen bg-background-light dark:bg-background-dark">
         <Spin size="large" />
       </div>
     );
   }
 
-  // staff không quyền -> useEffect sẽ navigate, ở đây return null để không flash UI
   if (!user) return null;
   if (user.role !== "leader" && !isAllowed) return null;
-
-  // project null (sau load) -> cũng return null (đã toast+redirect ở effect)
   if (!project) return null;
 
   return (
-    <div className="p-6 w-full">
+    <main className="max-w-[1400px] mx-auto w-full flex flex-col gap-2 py-6 px-4 bg-background-light dark:bg-background-dark min-h-screen text-slate-900 dark:text-white">
+      {isAtRisk && (
+        <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-4 flex items-center justify-between shadow-sm animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="size-10 bg-red-500 rounded-lg flex items-center justify-center text-white">
+              <span className="material-symbols-outlined">warning</span>
+            </div>
+            <div>
+              <p className="text-red-800 font-bold text-base">Cảnh báo: Dự án đang bị chậm tiến độ</p>
+              <p className="text-red-600 text-sm">Có {statistics.overdueCount} công việc đã quá hạn nhưng chưa hoàn thành.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              const el = document.querySelector('.user-management-table');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all border-none cursor-pointer"
+          >
+            Kiểm tra ngay
+          </button>
+        </div>
+      )}
+
+      <ProjectBreadcrumbs projectName={project.name} />
+
       <ProjectDetailHeader
         project={project}
         canEdit={canEdit}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
-
-      <EditProjectModal
-        open={openEdit}
-        onClose={() => setOpenEdit(false)}
-        project={project}
-        onUpdated={handleUpdatedProject}
-      />
-
-      <ProjectStatusTimeline
-        project={project}
-        canEdit={canEdit}
+        onEdit={() => setOpenEdit(true)}
         onStatusChange={handleStatusChange}
       />
 
+      <ProjectTabs />
+
+      {/* Stats Section */}
       <ProjectStatistics
         totalTasks={statistics.totalTasks}
         completedTasks={statistics.completedTasks}
@@ -318,24 +341,42 @@ const ProjectDetail = () => {
         totalMembers={statistics.totalMembers}
       />
 
-      <Row gutter={16} className="mb-6">
-        <Col xs={24} lg={12}>
-          <ProjectInfoCard project={project} owner={owner} />
-        </Col>
-        <Col xs={24} lg={12}>
-          <ProjectMembersCard
-            members={projectMembers}
-            owner={owner}
+      {/* Main Content Area */}
+      <div className="flex flex-col gap-6 p-4">
+        {/* Recent Tasks/Active Overview */}
+        <div className="flex flex-col gap-4 rounded-xl p-6 bg-white dark:bg-white/5 border border-slate-200 dark:border-primary/20">
+          <ProjectTasksTable
+            tasks={projectTasks}
             userMap={userMap}
-            loading={loadingMembers}
-            canAddMember={canAddMember}
-            onAddMember={handleAddMember}
-            canRemoveMember={canEdit}
-            onRemoveMember={handleRemoveMember}
-            currentUserId={project?.userId}
+            loading={tasksLoading}
+            onCreateTask={handleCreateTask}
+            isCompleted={project?.status === "COMPLETED"}
           />
-        </Col>
-      </Row>
+        </div>
+      </div>
+
+      {/* Team Members Section */}
+      <div className="p-4 mb-10">
+        <ProjectMembersCard
+          members={projectMembers}
+          owner={owner}
+          userMap={userMap}
+          loading={loadingMembers}
+          canAddMember={canAddMember}
+          onAddMember={handleAddMember}
+          canRemoveMember={canEdit}
+          onRemoveMember={handleRemoveMember}
+          currentUserId={project?.userId}
+          isCompleted={project?.status === "COMPLETED"}
+        />
+      </div>
+
+      <EditProjectModal
+        open={openEdit}
+        onClose={() => setOpenEdit(false)}
+        project={project}
+        onUpdated={handleUpdatedProject}
+      />
 
       <AddProjectMemberModal
         open={openAddMember}
@@ -353,27 +394,9 @@ const ProjectDetail = () => {
         projectId={projectId}
         projectMembers={projectMembers}
         userMap={userMap}
-        onCreated={() => {
-          // TODO: nếu useTasks có refetch thì gọi ở đây
-        }}
+        onCreated={fetchTasks}
       />
-
-      <Divider />
-
-      <ProjectTasksTable
-        tasks={projectTasks}
-        userMap={userMap}
-        loading={tasksLoading}
-        onCreateTask={handleCreateTask}
-      />
-
-      <ProjectLogworksTable
-        logworks={projectLogworks}
-        tasks={projectTasks}
-        userMap={userMap}
-        loading={logworksLoading}
-      />
-    </div>
+    </main>
   );
 };
 

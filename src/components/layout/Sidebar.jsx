@@ -1,178 +1,125 @@
-import { useState, useEffect, useMemo } from "react";
-import { Menu, Badge } from "antd";
-import { useNavigate, useLocation } from "react-router-dom";
-import {
-  DashboardOutlined,
-  ProjectOutlined,
-  CheckSquareOutlined,
-  SettingOutlined,
-  BarChartOutlined,
-  CalendarOutlined,
-  FileTextOutlined,
-  ClockCircleOutlined,
-} from "@ant-design/icons";
-
-import { useProjects } from "@/lib/hooks/useProjects";
-import { useTasks } from "@/lib/hooks/useTasks";
-import { useProjectMembers } from "@/lib/hooks/useProjectMembers";
+import { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { canManageStaff, isProjectMember } from "@/lib/utils/permissions";
+import { canManageStaff } from "@/lib/utils/permissions";
 
 const Sidebar = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [openKeys, setOpenKeys] = useState([]);
+  const { user, logout } = useAuth(); // Destructure logout
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const navigate = useNavigate(); // Hook for navigation
 
-  const projectsHook = useProjects();
-  const tasksHook = useTasks();
-  const membersHook = useProjectMembers();
+  const getLinkClass = ({ isActive }) => {
+    const baseClass = "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors";
+    // Force pink color using hex to ensure it works regardless of config
+    const activeClass = "bg-[#FF4081]/10 text-[#FF4081]";
+    const inactiveClass = "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800";
 
-  const projects = projectsHook?.projects ?? [];
-  const tasks = tasksHook?.tasks ?? [];
-  const members = membersHook?.members ?? [];
-
-  const projectsLoading = projectsHook?.loading ?? projectsHook?.projectsLoading ?? false;
-  const tasksLoading = tasksHook?.loading ?? tasksHook?.tasksLoading ?? false;
-  const membersLoading = membersHook?.loading ?? membersHook?.membersLoading ?? false;
-
-  const { user } = useAuth();
-
-  const myTasksCount = useMemo(() => {
-    if (!user) return 0;
-    return tasks.filter((t) => String(t.userId) === String(user.id)).length;
-  }, [tasks, user]);
-
-  const userProjectIds = useMemo(() => {
-    if (!user) return [];
-    return members
-      .filter((m) => String(m.userId) === String(user.id))
-      .map((m) => m.projectId);
-  }, [members, user]);
-
-  const userTaskProjectIds = useMemo(() => {
-    if (!user) return [];
-    const myTasks = tasks.filter((t) => String(t.userId) === String(user.id));
-    return Array.from(new Set(myTasks.map((t) => t.projectId)));
-  }, [tasks, user]);
-
-  const activeProjects = useMemo(() => {
-    const statusFiltered = projects.filter(
-      (p) => p?.status === "PLANNING" || p?.status === "IN_PROGRESS"
-    );
-
-    if (!user) return [];
-    if (user.role === "leader") return statusFiltered;
-
-    return statusFiltered.filter((project) =>
-      isProjectMember(user, project.id, project.userId, userProjectIds, userTaskProjectIds)
-    );
-  }, [projects, user, userProjectIds, userTaskProjectIds]);
-
-  const projectMenuItems = useMemo(() => {
-    const statusLabels = {
-      PLANNING: "Planning",
-      IN_PROGRESS: "Đang làm",
-    };
-
-    return activeProjects.map((project) => ({
-      key: `project-${project.id}`,
-      icon: <ProjectOutlined />,
-      label: (
-        <div className="flex items-center justify-between">
-          <span>{project.name}</span>
-          <span className="text-lg text-gray-500 ml-2 pr-10">
-            {statusLabels[project.status] || project.status}
-          </span>
-        </div>
-      ),
-      children: [
-        { key: `/projects/${project.id}/tasks`, icon: <FileTextOutlined />, label: "Tasks" },
-        { key: `/projects/${project.id}/logworks`, icon: <ClockCircleOutlined />, label: "Logworks" },
-        { key: `/projects/${project.id}/analytics`, icon: <BarChartOutlined />, label: "Analytics" },
-        { key: `/projects/${project.id}/calendar`, icon: <CalendarOutlined />, label: "Calendar" },
-        { key: `/projects/${project.id}/settings`, icon: <SettingOutlined />, label: "Settings" },
-      ],
-    }));
-  }, [activeProjects]);
-
-  const menuItems = useMemo(() => {
-    const items = [
-      { key: "/dashboard", icon: <DashboardOutlined />, label: "Dashboard" },
-      { key: "/projects", icon: <ProjectOutlined />, label: "Projects" },
-
-      // ✅ Menu My Tasks riêng, không children
-      {
-        key: "/my-tasks",
-        icon: <CheckSquareOutlined />,
-        label: (
-          <div className="flex items-center justify-between">
-            <span>
-              {canManageStaff(user) ? "Task" : "My Task"}
-            </span>
-
-            <Badge count={myTasksCount} showZero style={{ backgroundColor: "#52c41a" }} />
-          </div>
-        ),
-      },
-    ];
-
-    if (canManageStaff(user)) {
-      items.push({ key: "/users", icon: <ProjectOutlined />, label: "Quản lý nhân viên" });
-    }
-
-    items.push({ key: "/settings", icon: <SettingOutlined />, label: "Settings" });
-
-    // items.push({ type: "group", label: "PROJECTS", children: projectMenuItems });
-
-    return items;
-  }, [user, myTasksCount, projectMenuItems]);
-
-  const handleMenuClick = ({ key }) => {
-    if (typeof key === "string" && key.startsWith("/")) {
-      navigate(key);
-    }
+    return isActive ? `${baseClass} ${activeClass}` : `${baseClass} ${inactiveClass}`;
   };
 
-  const selectedKeys = useMemo(() => {
-    const path = location.pathname;
-    return [path === "/" ? "/dashboard" : path];
-  }, [location.pathname]);
+  const getIconStyle = (isActive) => {
+    return isActive ? { fontVariationSettings: "'FILL' 1" } : {};
+  };
 
-  useEffect(() => {
-    const path = location.pathname;
-
-    // ✅ /my-tasks thì không auto mở project submenu
-    if (path === "/my-tasks") return;
-
-    const match = path.match(/^\/projects\/([^/]+)/);
-    if (!match) return;
-
-    const projectId = match[1];
-    setOpenKeys((prev) => {
-      const projectKey = `project-${projectId}`;
-      if (!prev.includes(projectKey)) return [...prev, projectKey];
-      return prev;
-    });
-  }, [location.pathname]);
+  const handleLogout = () => {
+    logout?.();
+    navigate("/login");
+  };
 
   return (
-    <aside className="bg-white border-r border-gray-200 h-full flex flex-col flex-shrink-0 shadow-lg" style={{ width: '250px' }}>
-      {projectsLoading || tasksLoading || membersLoading ? (
-        <div className="flex items-center justify-center h-full text-3xl">
-          <span>Đang tải...</span>
+    <aside className="w-80 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex flex-col fixed h-full z-20">
+      <div className="p-6 flex items-center gap-4">
+        <div className="size-12 bg-primary rounded-lg flex items-center justify-center text-white">
+          <span className="material-symbols-outlined text-3xl">account_tree</span>
         </div>
-      ) : (
-        <Menu
-          mode="inline"
-          selectedKeys={selectedKeys}
-          openKeys={openKeys}
-          items={menuItems}
-          onClick={handleMenuClick}
-          onOpenChange={setOpenKeys}
-          className="flex-1 border-r-0 overflow-y-auto pt-4"
-          style={{ maxHeight: "100%", background: 'transparent' }}
-        />
-      )}
+        <div className="flex flex-col">
+          <h1 className="text-slate-900 dark:text-white text-lg font-bold leading-tight">PM System</h1>
+          <p className="text-slate-500 text-sm font-normal">Management Console</p>
+        </div>
+      </div>
+
+      <nav className="flex-1 px-4 space-y-2">
+        <NavLink to="/dashboard" className={getLinkClass}>
+          {({ isActive }) => (
+            <>
+              <span className="material-symbols-outlined text-2xl" style={getIconStyle(isActive)}>dashboard</span>
+              <span className={`text-base ${isActive ? 'font-bold' : 'font-medium'}`}>Dashboard</span>
+            </>
+          )}
+        </NavLink>
+
+        <NavLink to="/projects" className={getLinkClass}>
+          {({ isActive }) => (
+            <>
+              <span className="material-symbols-outlined text-2xl" style={getIconStyle(isActive)}>folder</span>
+              <span className={`text-base ${isActive ? 'font-bold' : 'font-medium'}`}>Projects</span>
+            </>
+          )}
+        </NavLink>
+
+        <NavLink to="/my-tasks" className={getLinkClass}>
+          {({ isActive }) => (
+            <>
+              <span className="material-symbols-outlined text-2xl" style={getIconStyle(isActive)}>check_box</span>
+              <span className={`text-base ${isActive ? 'font-bold' : 'font-medium'}`}>Tasks</span>
+            </>
+          )}
+        </NavLink>
+
+        {canManageStaff(user) && (
+          <NavLink to="/users" className={getLinkClass}>
+            {({ isActive }) => (
+              <>
+                <span className="material-symbols-outlined text-2xl" style={getIconStyle(isActive)}>group</span>
+                <span className={`text-base ${isActive ? 'font-bold' : 'font-medium'}`}>Members</span>
+              </>
+            )}
+          </NavLink>
+        )}
+
+        <a href="#" className="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors">
+          <span className="material-symbols-outlined text-2xl">bar_chart</span>
+          <span className="text-base font-medium">Reports</span>
+        </a>
+
+        <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
+          <NavLink to="/settings" className={getLinkClass}>
+            {({ isActive }) => (
+              <>
+                <span className="material-symbols-outlined text-2xl" style={getIconStyle(isActive)}>settings</span>
+                <span className={`text-base ${isActive ? 'font-bold' : 'font-medium'}`}>Settings</span>
+              </>
+            )}
+          </NavLink>
+        </div>
+      </nav>
+
+      <div className="p-4 border-t border-slate-100 dark:border-slate-800 relative">
+        {showUserMenu && (
+          <div className="absolute bottom-full left-4 right-4 mb-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 p-2 overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors text-sm font-medium"
+            >
+              <span className="material-symbols-outlined text-xl">logout</span>
+              Logout
+            </button>
+          </div>
+        )}
+        <div
+          onClick={() => setShowUserMenu(!showUserMenu)}
+          className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none"
+        >
+          <div
+            className="size-10 rounded-full bg-center bg-cover border border-white"
+            style={{ backgroundImage: `url('${user?.avatar || "https://lh3.googleusercontent.com/aida-public/AB6AXuB9rF0wwPDTvt4oTJH1ihfvDY5tx3cGfXN5oHqL29sYamrIIa-CXWNzq8Ji0fIm4nWOggqiaZ69MXnqAhGlZ0-aMzAGeMR1iIDKqePE4FGF9lJC7w7OE1bCtc1qTKa6wj8SHdCaqrgb4GMjzTek6rTZFXXtg3SmYEgvY3_Jzcp3hwD3N0E0p8Wooy-wyQUDYQyghb_iGgylREg6ck6vrFystQcn9xirS_c_X7xnLLWEhPyvgErlea4b3onDczGPt0b2hxKFRfIO7N9R"}')` }}
+          ></div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{user?.name || "Admin User"}</p>
+            <p className="text-xs text-slate-500 truncate">{user?.email || "admin@pmsystem.com"}</p>
+          </div>
+        </div>
+      </div>
     </aside>
   );
 };

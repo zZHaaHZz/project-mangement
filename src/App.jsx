@@ -5,7 +5,7 @@ import ProtectedRoute from './components/routes/ProtectedRoute';
 import MainLayout from './components/layout/MainLayout';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
-import DashboardPage from '@/pages/DashboardPage';
+// import DashboardPage from '@/pages/DashboardPage';
 import UserPage from '@/pages/User/UserPage';
 import ProjectPage from '@/pages/Project/ProjectPage';
 import ProjectDetail from '@/pages/Project/ProjectDetail';
@@ -35,6 +35,8 @@ const ProjectSettingsPage = () => {
 
 const SettingsPage = () => <div>Settings Page</div>;
 const KanbanPage = () => <div>Kanban Page</div>;
+
+const DashboardPage = () => <div>Dashboard Page</div>;
 
 const App = () => {
     return (

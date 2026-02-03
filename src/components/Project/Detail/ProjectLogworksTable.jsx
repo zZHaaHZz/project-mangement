@@ -11,12 +11,12 @@ const ProjectLogworksTable = ({
 }) => {
   const columns = [
     {
-      title: "Task",
+      title: "Công việc",
       dataIndex: "taskId",
       key: "taskId",
       render: (taskId) => {
         const task = tasks.find((t) => String(t.id) === String(taskId));
-        return task?.title || `Task #${taskId}`;
+        return task?.title || `Công việc #${taskId}`;
       },
     },
     {
@@ -25,7 +25,7 @@ const ProjectLogworksTable = ({
       key: "userId",
       render: (userId) => {
         const logworkUser = userMap.get(userId);
-        return logworkUser?.name || "Unknown";
+        return logworkUser?.name || "Không xác định";
       },
     },
     {
@@ -35,9 +35,9 @@ const ProjectLogworksTable = ({
       render: (hours) => `${hours} giờ`,
     },
     {
-      title: "Mô tả",
-      dataIndex: "description",
-      key: "description",
+      title: "Ghi chú",
+      key: "note",
+      render: (_, record) => record.note || record.description || "-",
       ellipsis: true,
     },
     {
