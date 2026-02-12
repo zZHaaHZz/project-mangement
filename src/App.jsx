@@ -36,7 +36,7 @@ const ProjectSettingsPage = () => {
 const SettingsPage = () => <div>Settings Page</div>;
 const KanbanPage = () => <div>Kanban Page</div>;
 
-const DashboardPage = () => <div>Dashboard Page</div>;
+import DashboardPage from '@/pages/DashboardPage';
 
 const App = () => {
     return (

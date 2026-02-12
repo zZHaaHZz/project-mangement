@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { message, Tooltip, Avatar } from "antd";
+import dayjs from "dayjs";
 import { PlusOutlined, FilterOutlined } from "@ant-design/icons";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiClient } from "@/lib/api";
+import { logworksApi, usersApi } from "@/lib/api";
 import { useTasks } from "@/lib/hooks/useTasks";
 import { useProjects } from "@/lib/hooks/useProjects";
 import { useLogworks } from "@/lib/hooks/useLogworks";
@@ -10,6 +11,7 @@ import { useProjectMembers } from "@/lib/hooks/useProjectMembers";
 import TaskDetailModal from "@/components/Task/TaskDetailModal";
 import LogworkModal from "@/components/Task/LogworkModal";
 import CreateTaskForMemberModal from "@/components/Project/Detail/CreateTaskForMemberModal";
+import EditTaskModal from "@/components/Task/EditTaskModal";
 import { useLayout } from "@/contexts/LayoutContext";
 
 const TaskPage = () => {
@@ -23,6 +25,8 @@ const TaskPage = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailTask, setDetailTask] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
   const [searchText, setSearchText] = useState("");
 
   // Logwork state
@@ -30,14 +34,17 @@ const TaskPage = () => {
   const [selectedTaskLog, setSelectedTaskLog] = useState(null);
   const [hours, setHours] = useState(1);
   const [note, setNote] = useState("");
+  const [logworkDate, setLogworkDate] = useState(dayjs());
 
   const isLeader = user?.role === "leader";
 
   const openLogwork = (task, e) => {
     e?.stopPropagation?.();
+    if (task.status === "done") return; // Safety guard
     setSelectedTaskLog(task);
     setHours(1);
     setNote("");
+    setLogworkDate(dayjs());
     setLogworkOpen(true);
   };
 
@@ -49,10 +56,11 @@ const TaskPage = () => {
         userId: user?.id,
         hours: Number(hours),
         note: note,
+        date: logworkDate.format("YYYY-MM-DD"), // Store date
         createdAt: new Date().toISOString()
       };
 
-      await apiClient.createLogwork(newLogwork);
+      await logworksApi.createLogwork(newLogwork);
       message.success("Ghi nhận logwork thành công");
       setLogworkOpen(false);
       // Refresh data
@@ -125,7 +133,7 @@ const TaskPage = () => {
 
   const [users, setUsers] = useState([]);
   useEffect(() => {
-    apiClient.getUsers().then(data => {
+    usersApi.getUsers().then(data => {
       setUsers(Array.isArray(data) ? data : (data?.data ?? []));
     });
   }, []);
@@ -265,12 +273,12 @@ const TaskPage = () => {
                                 </span>
                               </td>
                               <td className="px-6 py-5 text-center">
-                                <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${task.id % 3 === 0 ? "bg-pink-50 text-pink-600 border border-pink-100" :
-                                  task.id % 3 === 1 ? "bg-amber-50 text-amber-600 border border-amber-100" :
+                                <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${task.priority === "high" ? "bg-pink-50 text-pink-600 border border-pink-100" :
+                                  task.priority === "medium" ? "bg-amber-50 text-amber-600 border border-amber-100" :
                                     "bg-slate-50 text-slate-600 border border-slate-100"
                                   }`}>
-                                  {task.id % 3 === 0 ? "Cao" :
-                                    task.id % 3 === 1 ? "Trung bình" : "Thấp"}
+                                  {task.priority === "high" ? "Cao" :
+                                    task.priority === "medium" ? "Trung bình" : (task.priority === "low" ? "Thấp" : "Trung bình")}
                                 </span>
                               </td>
                               <td className="px-6 py-5">
@@ -292,10 +300,17 @@ const TaskPage = () => {
                               </td>
                               <td className="px-6 py-5 text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Tooltip title="Ghi nhận công việc">
+                                  <Tooltip title={
+                                    task.status === "done"
+                                      ? "Không thể ghi nhận giờ làm cho công việc đã hoàn thành"
+                                      : String(user?.id) !== String(task.userId)
+                                        ? "Bạn không có quyền ghi nhận giờ cho công việc này"
+                                        : "Ghi nhận công việc"
+                                  }>
                                     <button
+                                      disabled={task.status === "done" || String(user?.id) !== String(task.userId)}
                                       onClick={(e) => openLogwork(task, e)}
-                                      className="size-9 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all border-none cursor-pointer"
+                                      className={`size-9 flex items-center justify-center rounded-lg transition-all border-none ${task.status === "done" || String(user?.id) !== String(task.userId) ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 cursor-pointer"}`}
                                     >
                                       <span className="material-symbols-outlined text-xl">history</span>
                                     </button>
@@ -367,7 +382,24 @@ const TaskPage = () => {
           await fetchTasks();
           setDetailTask(prev => ({ ...prev, status: newStatus }));
         }}
+        onEdit={(task) => {
+          setEditingTask(task);
+          setDetailOpen(false);
+          setEditOpen(true);
+        }}
+        onDelete={() => {
+          fetchTasks();
+        }}
         onOpenLogwork={openLogwork}
+      />
+
+      <EditTaskModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        task={editingTask}
+        projectMembers={members}
+        userMap={userMap}
+        onUpdated={fetchTasks}
       />
 
       <LogworkModal
@@ -379,6 +411,8 @@ const TaskPage = () => {
         setHours={setHours}
         note={note}
         setNote={setNote}
+        date={logworkDate}
+        setDate={setLogworkDate}
       />
 
       <CreateTaskForMemberModal
@@ -388,7 +422,7 @@ const TaskPage = () => {
           fetchTasks();
           setCreateOpen(false);
         }}
-        projectId={projects[0]?.id} // Default project context
+        projects={projects} // Pass all projects
         projectMembers={members} // All members to allow assignee selection
         userMap={userMap}
       />

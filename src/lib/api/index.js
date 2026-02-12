@@ -8,7 +8,6 @@ import { ProjectsApi } from './projects';
 import { TasksApi } from './tasks';
 import { LogworksApi } from './logworks';
 import { ProjectMembersApi } from './project-members';
-import { createLegacyApiClient } from './legacy';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -24,7 +23,3 @@ export const projectMembersApi = new ProjectMembersApi(API_BASE_URL);
 // Export base client để có thể dùng chung
 export { BaseApiClient } from './base';
 export { baseApiClient } from './base';
-
-// Legacy API Client - Giữ lại để tương thích ngược
-// TODO: Có thể xóa sau khi migrate hết sang các API modules riêng
-export const apiClient = createLegacyApiClient(API_BASE_URL);

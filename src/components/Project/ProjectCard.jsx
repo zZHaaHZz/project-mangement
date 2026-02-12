@@ -106,20 +106,6 @@ const ProjectCard = ({ project, owner, progress = 0, isAtRisk = false, overdueCo
                     Ngày tạo: {formatDate(project.createdAt)}
                 </p>
             </div>
-            <div className="flex flex-col gap-2">
-                <div className="flex justify-between text-xs font-semibold">
-                    <span className={`${isAtRisk ? 'text-red-500' : 'text-slate-500 dark:text-accent-text'}`}>
-                        {isAtRisk ? 'Rủi ro trễ hạn' : 'Tiến độ hoàn thành'}
-                    </span>
-                    <span className={isAtRisk ? 'text-red-600 font-bold' : 'text-gray-900 dark:text-white'}>{progress}%</span>
-                </div>
-                <div className="w-full bg-gray-100 dark:bg-secondary-dark rounded-full h-2">
-                    <div
-                        className={`${isAtRisk ? 'bg-red-500' : status.barColor} h-2 rounded-full transition-all duration-500`}
-                        style={{ width: `${progress}%` }}
-                    />
-                </div>
-            </div>
             <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-700/50">
                 <div className="flex -space-x-2">
                     {owner ? (

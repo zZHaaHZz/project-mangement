@@ -1,8 +1,7 @@
 // Custom hook để quản lý state cho Logworks
 
 import { useState, useEffect } from 'react';
-import { apiClient } from '../api';
-import { Logwork } from '../../models';
+import { logworksApi } from '../api';
 
 export function useLogworks() {
   const [logworks, setLogworks] = useState([]);
@@ -17,7 +16,7 @@ export function useLogworks() {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiClient.getLogworks();
+      const data = await logworksApi.getLogworks();
       setLogworks(data);
     } catch (err) {
       setError(err.message || 'Failed to fetch logworks');

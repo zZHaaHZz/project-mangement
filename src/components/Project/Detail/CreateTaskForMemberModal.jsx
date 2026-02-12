@@ -8,25 +8,34 @@ const { TextArea } = Input;
 const CreateTaskForMemberModal = ({
   open,
   onClose,
-  projectId,
+  projectId: providedProjectId,
+  projects = [],
   projectMembers = [],
   userMap = new Map(),
   onCreated,
 }) => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState(providedProjectId);
 
   useEffect(() => {
     if (open) {
       form.resetFields();
+      setSelectedProjectId(providedProjectId);
+      if (providedProjectId) {
+        form.setFieldsValue({ projectId: Number(providedProjectId) });
+      }
     }
-  }, [open, form]);
+  }, [open, form, providedProjectId]);
+
+  const formProjectId = Form.useWatch("projectId", form);
 
   const membersOfProject = useMemo(() => {
+    const pId = selectedProjectId || formProjectId;
     return (projectMembers || []).filter(
-      (m) => Number(m.projectId) === Number(projectId)
+      (m) => Number(m.projectId) === Number(pId)
     );
-  }, [projectMembers, projectId]);
+  }, [projectMembers, selectedProjectId, formProjectId]);
 
   const memberOptions = useMemo(() => {
     return membersOfProject
@@ -47,11 +56,10 @@ const CreateTaskForMemberModal = ({
         title: values.title,
         description: values.description || "",
         status: values.status,
-        projectId: Number(projectId),
+        priority: values.priority || "medium",
+        projectId: Number(values.projectId || selectedProjectId),
         userId: Number(values.userId),
         estimation: values.estimation ? Number(values.estimation) : 0,
-        startDate: values.startDate ? values.startDate.toISOString() : null,
-        dueDate: values.endDate ? values.endDate.toISOString() : null,
         createdAt: new Date().toISOString(),
       };
 
@@ -125,8 +133,28 @@ const CreateTaskForMemberModal = ({
               </Form.Item>
             </div>
 
-            {/* Status & Assignee Grid */}
+            {/* Project & Status & Priority Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-[#333] text-sm font-semibold flex items-center gap-1">
+                  Dự án <span className="text-primary">*</span>
+                </label>
+                <Form.Item
+                  name="projectId"
+                  rules={[{ required: true, message: "Vui lòng chọn dự án" }]}
+                  className="mb-0"
+                >
+                  <Select
+                    className="task-select-charcoal h-12"
+                    placeholder="Chọn dự án"
+                    options={projects.map(p => ({ label: p.name, value: p.id }))}
+                    onChange={(v) => setSelectedProjectId(v)}
+                    disabled={!!providedProjectId}
+                    suffixIcon={<span className="material-symbols-outlined text-gray-400">folder</span>}
+                  />
+                </Form.Item>
+              </div>
+
               <div className="flex flex-col gap-2">
                 <label className="text-[#333] text-sm font-semibold flex items-center gap-1">
                   Trạng thái <span className="text-primary">*</span>
@@ -149,6 +177,32 @@ const CreateTaskForMemberModal = ({
                   />
                 </Form.Item>
               </div>
+            </div>
+
+            {/* Priority & Assignee Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[#333] text-sm font-semibold flex items-center gap-1">
+                  Độ ưu tiên <span className="text-primary">*</span>
+                </label>
+                <Form.Item
+                  name="priority"
+                  initialValue="medium"
+                  rules={[{ required: true }]}
+                  className="mb-0"
+                >
+                  <Select
+                    className="task-select-charcoal h-12"
+                    options={[
+                      { value: "high", label: "Cao" },
+                      { value: "medium", label: "Trung bình" },
+                      { value: "low", label: "Thấp" },
+                    ]}
+                    suffixIcon={<span className="material-symbols-outlined text-gray-400">priority_high</span>}
+                  />
+                </Form.Item>
+              </div>
 
               <div className="flex flex-col gap-2">
                 <label className="text-[#333] text-sm font-semibold">Thành viên</label>
@@ -165,34 +219,6 @@ const CreateTaskForMemberModal = ({
               </div>
             </div>
 
-            {/* Date Range Selection */}
-            <div className="flex flex-col gap-4 py-2">
-              <label className="text-[#333] text-sm font-semibold">Thời gian thực hiện</label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-6 rounded-xl border border-gray-200">
-                <div className="flex flex-col gap-3">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ngày bắt đầu</span>
-                  <Form.Item name="startDate" className="mb-0">
-                    <DatePicker
-                      format="DD/MM/YYYY"
-                      placeholder="Chọn ngày"
-                      className="task-datepicker-charcoal h-12 w-full"
-                      suffixIcon={<span className="material-symbols-outlined text-sm">calendar_month</span>}
-                    />
-                  </Form.Item>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ngày kết thúc</span>
-                  <Form.Item name="endDate" className="mb-0">
-                    <DatePicker
-                      format="DD/MM/YYYY"
-                      placeholder="Chọn ngày"
-                      className="task-datepicker-charcoal h-12 w-full"
-                      suffixIcon={<span className="material-symbols-outlined text-sm">calendar_month</span>}
-                    />
-                  </Form.Item>
-                </div>
-              </div>
-            </div>
 
           </Form>
         </div>

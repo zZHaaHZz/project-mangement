@@ -6,6 +6,7 @@ const ProjectTasksTable = ({
   userMap = new Map(),
   loading,
   onCreateTask,
+  onTaskClick,
   isCompleted = false,
 }) => {
   const getStatusConfig = (status) => {
@@ -63,6 +64,7 @@ const ProjectTasksTable = ({
             return (
               <div
                 key={task.id}
+                onClick={() => onTaskClick?.(task)}
                 className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-white/5 border border-transparent hover:border-primary/30 transition-all cursor-pointer group shadow-sm"
               >
                 <div className="flex items-center gap-4">

@@ -1,7 +1,6 @@
 // Custom hook để quản lý state cho Tasks
 import { useState, useEffect } from 'react';
-import { apiClient } from '../api';
-import { Task } from '../../models';
+import { tasksApi } from '../api';
 
 export function useTasks() {
   const [tasks, setTasks] = useState([]);
@@ -16,7 +15,7 @@ export function useTasks() {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiClient.getTasks();
+      const data = await tasksApi.getTasks();
       setTasks(data);
     } catch (err) {
       setError(err.message || 'Failed to fetch tasks');
@@ -28,7 +27,7 @@ export function useTasks() {
   const createTask = async (taskData) => {
     try {
       setError(null);
-      const newTask = await apiClient.createTask(taskData);
+      const newTask = await tasksApi.createTask(taskData);
       setTasks([...tasks, newTask]);
       return newTask;
     } catch (err) {
@@ -40,7 +39,7 @@ export function useTasks() {
   const updateTask = async (id, taskData) => {
     try {
       setError(null);
-      const updatedTask = await apiClient.updateTask(id, taskData);
+      const updatedTask = await tasksApi.updateTask(id, taskData);
       setTasks(tasks.map(t => t.id === id ? updatedTask : t));
       return updatedTask;
     } catch (err) {
@@ -52,7 +51,7 @@ export function useTasks() {
   const deleteTask = async (id) => {
     try {
       setError(null);
-      await apiClient.deleteTask(id);
+      await tasksApi.deleteTask(id);
       setTasks(tasks.filter(t => t.id !== id));
     } catch (err) {
       setError(err.message || 'Failed to delete task');

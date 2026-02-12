@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { apiClient } from '../lib/api';
+import { authApi, usersApi } from '../lib/api';
 
 const AuthContext = createContext(undefined);
 
@@ -9,19 +9,35 @@ export function AuthProvider({ children }) {
 
     useEffect(() => {
         // Load user từ localStorage khi component mount
-        const loadUserFromStorage = () => {
+        const loadUserFromStorage = async () => {
             const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
             if (token) {
-                // Set token vào apiClient
-                apiClient.setToken(token);
-                // Lấy user từ localStorage
-                const savedUser = apiClient.getCurrentUserFromStorage();
-                if (savedUser) {
-                    setUser(savedUser);
+                // Set token vào authApi
+                authApi.setToken(token);
+                // Lấy user từ localStorage (data cũ)
+                const savedUser = authApi.getCurrentUserFromStorage();
+
+                if (savedUser && savedUser.id) {
+                    try {
+                        // Gọi API để lấy thông tin mới nhất từ server
+                        const freshUser = await usersApi.getUserById(savedUser.id);
+
+                        if (freshUser && freshUser.approved === true) {
+                            // Cập nhật thông tin mới nhất vào state và storage
+                            setUser(freshUser);
+                            authApi.saveUserToStorage(freshUser);
+                        } else {
+                            // User bị hủy ngang quyền duyệt
+                            logout();
+                        }
+                    } catch (error) {
+                        // Nếu user không tồn tại (404) hoặc lỗi token
+                        console.error('Verify user error:', error);
+                        logout();
+                    }
                 } else {
-                    // Không có user trong localStorage, xóa token
-                    localStorage.removeItem('token');
-                    apiClient.setToken(null);
+                    // Không có user trong localStorage
+                    logout();
                 }
             }
             setLoading(false);
@@ -32,12 +48,12 @@ export function AuthProvider({ children }) {
 
     const login = async (credentials) => {
         try {
-            const response = await apiClient.login(credentials.email, credentials.password);
+            const response = await authApi.login(credentials.email, credentials.password);
 
             // Kiểm tra user đã được duyệt chưa
-            if (response.user && response.user.approved === false) {
+            if (response.user && response.user.approved !== true) {
                 // User chưa được duyệt, không cho login
-                apiClient.logout(); // Xóa token và user khỏi localStorage
+                authApi.logout(); // Xóa token và user khỏi localStorage
                 throw new Error('Tài khoản của bạn chưa được Leader duyệt. Vui lòng đợi Leader phê duyệt.');
             }
 
@@ -50,13 +66,16 @@ export function AuthProvider({ children }) {
 
     const register = async (userData) => {
         try {
-            // Mặc định role là 'staff' nếu không được cung cấp
-            const userDataWithRole = {
+            // Khóa chặt role là 'staff' và approved là false để tránh nâng cấp quyền trái phép
+            const secureUserData = {
                 ...userData,
-                role: userData.role || 'staff',
+                role: 'staff',
                 approved: false
             };
-            await apiClient.register(userDataWithRole);
+            await authApi.register(secureUserData);
+            // Xóa token ngay lập tức vì user chưa được duyệt
+            localStorage.removeItem('token');
+            authApi.setToken(null);
             // Không set user ở đây vì cần được duyệt mới được login
         } catch (error) {
             console.error('Register error:', error);
@@ -65,7 +84,7 @@ export function AuthProvider({ children }) {
     };
 
     const logout = () => {
-        apiClient.logout();
+        authApi.logout();
         setUser(null);
     };
 

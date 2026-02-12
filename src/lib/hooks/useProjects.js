@@ -2,8 +2,7 @@
 // Ví dụ về cách tổ chức state và logic trong custom hooks
 
 import { useState, useEffect } from 'react';
-import { apiClient } from '../api';
-import { Project } from '../../models';
+import { projectsApi } from '../api';
 
 export function useProjects() {
   // State management
@@ -16,7 +15,7 @@ export function useProjects() {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiClient.getProjects();
+      const data = await projectsApi.getProjects();
       setAllProjects(data);
     } catch (err) {
       setError(err.message || 'Failed to fetch projects');
@@ -34,7 +33,7 @@ export function useProjects() {
   const createProject = async (projectData) => {
     try {
       setError(null);
-      const newProject = await apiClient.createProject(projectData);
+      const newProject = await projectsApi.createProject(projectData);
       setAllProjects([...allProjects, newProject]);
       return newProject;
     } catch (err) {
@@ -47,7 +46,7 @@ export function useProjects() {
   const updateProject = async (id, projectData) => {
     try {
       setError(null);
-      const updatedProject = await apiClient.updateProject(id, projectData);
+      const updatedProject = await projectsApi.updateProject(id, projectData);
       setAllProjects(allProjects.map(p => p.id === id ? updatedProject : p));
       return updatedProject;
     } catch (err) {
@@ -60,7 +59,7 @@ export function useProjects() {
   const deleteProject = async (id) => {
     try {
       setError(null);
-      await apiClient.deleteProject(id);
+      await projectsApi.deleteProject(id);
       setAllProjects(allProjects.filter(p => p.id !== id));
     } catch (err) {
       setError(err.message || 'Failed to delete project');

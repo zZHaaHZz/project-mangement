@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react'
 import { Input, Button, Alert } from 'antd'
 import { useNavigate } from 'react-router-dom'
-import { apiClient } from '../../lib/api'
+import { useAuth } from '../../contexts/AuthContext'
+import { authApi } from '../../lib/api'
 
 const Register = () => {
   const navigate = useNavigate()
@@ -12,13 +13,13 @@ const Register = () => {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
 
-  const hasRegisteredRef = useRef(false)
+  // Sử dụng AuthContext
+  const { register } = useAuth()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     e.stopPropagation()
 
-    // Nếu đã đăng ký thành công thì không submit lại
     if (success) return
 
     setError('')
@@ -26,18 +27,14 @@ const Register = () => {
     setSuccess(false)
 
     try {
-      await apiClient.createUser({
+      await register({
         name,
         email,
         password,
-        role: 'staff',
-        approved: false,
-        createdAt: new Date().toISOString(),
       })
 
-      hasRegisteredRef.current = true
       setSuccess(true)
-      navigate('/login'); // ✅ FIX: redirect to login
+      // Không navigate ngay để user xem thông báo success
       setName('')
       setEmail('')
       setPassword('')

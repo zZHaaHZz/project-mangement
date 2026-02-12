@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, Form, Input, Select, Switch, message } from 'antd';
-import { apiClient } from '@/lib/api';
+import { usersApi } from '@/lib/api';
 
 const { TextArea } = Input;
 
@@ -39,7 +39,7 @@ const UserModal = ({
           ...values,
           approved: values.approved !== undefined ? values.approved : editingUser.approved,
         };
-        await apiClient.updateUser(editingUser.id, updateData);
+        await usersApi.updateUser(editingUser.id, updateData);
         message.success('Cập nhật nhân viên thành công');
       } else {
         const createData = {
@@ -47,7 +47,7 @@ const UserModal = ({
           approved: values.approved !== undefined ? values.approved : false,
           createdAt: new Date().toISOString(),
         };
-        await apiClient.createUser(createData);
+        await usersApi.createUser(createData);
         message.success('Tạo nhân viên mới thành công');
       }
       onSuccess();

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Modal, Form, Input, Select, message } from "antd";
+import { projectsApi } from "@/lib/api";
 
 const { TextArea } = Input;
 
@@ -21,18 +22,11 @@ const EditProjectModal = ({ open, onClose, project, onUpdated }) => {
       const values = await form.validateFields();
       setSubmitting(true);
 
-      const res = await fetch(`http://localhost:3001/projects/${project.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: values.name,
-          description: values.description || "",
-          status: values.status,
-        }),
+      const updated = await projectsApi.updateProject(project.id, {
+        name: values.name,
+        description: values.description || "",
+        status: values.status,
       });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const updated = await res.json();
 
       message.success("Cập nhật project thành công");
       onUpdated?.(updated);

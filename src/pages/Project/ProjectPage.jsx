@@ -6,7 +6,7 @@ import { useProjects } from "@/lib/hooks/useProjects";
 import { useProjectMembers } from "@/lib/hooks/useProjectMembers";
 import { useTasks } from "@/lib/hooks/useTasks";
 import { isProjectMember } from "@/lib/utils/permissions";
-import { apiClient } from "@/lib/api";
+import { usersApi } from "@/lib/api";
 
 import ProjectsGrid from "@/components/Project/ProjectsGrid.jsx";
 import ProjectsPagination from "@/components/Project/ProjectsPagination.jsx";
@@ -23,11 +23,11 @@ const ProjectPage = () => {
   const projectsLoading = projectsHook?.projectsLoading ?? projectsHook?.loading ?? false;
 
   const { members = [] } = useProjectMembers();
-  const { tasks = [] } = useTasks();
+  const { tasks = [], loading: tasksLoading } = useTasks();
 
   const [openCreate, setOpenCreate] = useState(false);
 
-  // ✅ users lấy từ DB bằng apiClient (giống UserPage)
+  // ✅ users lấy từ DB bằng usersApi (giống UserPage)
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState("");
@@ -50,7 +50,7 @@ const ProjectPage = () => {
     try {
       setLoadingUsers(true);
       setError("");
-      const data = await apiClient.getUsers(); // ✅
+      const data = await usersApi.getUsers(); // ✅
       setUsers(Array.isArray(data) ? data : (data?.data ?? []));
     } catch (e) {
       console.error(e);
@@ -199,7 +199,7 @@ const ProjectPage = () => {
     return () => setHeaderActions(null);
   }, [searchText, user, setHeaderActions]);
 
-  if (loadingUsers || projectsLoading) return <div className="p-8">Đang tải...</div>;
+  if (loadingUsers || projectsLoading || tasksLoading) return <div className="p-8">Đang tải...</div>;
   if (error) return <div className="p-8 text-red-500">Lỗi: {error}</div>;
 
   return (

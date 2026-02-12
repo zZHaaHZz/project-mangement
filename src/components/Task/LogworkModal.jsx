@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, Space, InputNumber, Input, Typography } from "antd";
+import { Modal, Space, InputNumber, Input, Typography, DatePicker } from "antd";
 
 const { Text, Title } = Typography;
 
@@ -12,6 +12,8 @@ const LogworkModal = ({
     setHours,
     note,
     setNote,
+    date,
+    setDate,
 }) => {
     return (
         <Modal
@@ -41,6 +43,19 @@ const LogworkModal = ({
 
                 {/* Content */}
                 <div className="px-8 py-4 space-y-6">
+                    <div className="flex flex-col gap-2">
+                        <label className="text-[#333] text-sm font-semibold flex items-center gap-1">
+                            Ngày thực hiện <span className="text-primary">*</span>
+                        </label>
+                        <DatePicker
+                            className="w-full rounded-lg text-[#333] focus:outline-0 focus:ring-2 focus:ring-primary/20 focus:border-primary border border-transparent bg-[#F3F4F6] h-12 flex items-center px-4 text-base font-normal transition-all"
+                            value={date}
+                            onChange={(v) => setDate(v)}
+                            format="DD/MM/YYYY"
+                            allowClear={false}
+                        />
+                    </div>
+
                     <div className="flex flex-col gap-2">
                         <label className="text-[#333] text-sm font-semibold flex items-center gap-1">
                             Số giờ làm việc <span className="text-primary">*</span>

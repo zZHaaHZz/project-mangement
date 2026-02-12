@@ -1,12 +1,7 @@
 // Project Members API endpoints
 import { BaseApiClient } from "./base";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
-
 export class ProjectMembersApi extends BaseApiClient {
-  constructor() {
-    super(API_BASE_URL);
-  }
 
   getProjectMembers() {
     return this.get("/project_members");

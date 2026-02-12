@@ -4,12 +4,10 @@ import { User } from '../../models';
 
 export class UsersApi extends BaseApiClient {
   async getUsers() {
-    let data = await this.get('/users');
-    // console.log(data)
     return this.get('/users');
   }
 
-  async getUser(id) {
+  async getUserById(id) {
     return this.get(`/users/${id}`);
   }
 

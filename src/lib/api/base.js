@@ -41,23 +41,40 @@ export class BaseApiClient {
 
     if (!response.ok) {
       let errorMessage = response.statusText || "Có lỗi xảy ra";
+      let serverMessage = null;
 
+      // Lấy thông báo lỗi từ server trước
       try {
         const text = await response.text();
         if (text) {
           try {
             const errorData = JSON.parse(text);
-            errorMessage = errorData?.error || errorData?.message || errorMessage;
+            serverMessage = errorData?.error || errorData?.message;
           } catch {
-            errorMessage = text || errorMessage;
+            serverMessage = text;
           }
         }
       } catch { }
 
-      if (response.status === 400) errorMessage = "Dữ liệu không hợp lệ";
-      else if (response.status === 404) errorMessage = "Không tìm thấy dữ liệu";
-      else if (response.status === 0 || response.status === 500)
+      // Xử lý theo status code, ưu tiên thông báo từ server
+      if (response.status === 400) {
+        if (endpoint.includes("/login")) {
+          errorMessage = "Tài khoản hoặc mật khẩu không đúng";
+        } else if (endpoint.includes("/register")) {
+          // Ưu tiên thông báo từ server, fallback về thông báo mặc định
+          errorMessage = serverMessage || "Thông tin đăng ký không hợp lệ hoặc Email đã tồn tại";
+        } else {
+          errorMessage = serverMessage || errorMessage;
+        }
+      } else if (response.status === 404) {
+        errorMessage = serverMessage || "Không tìm thấy dữ liệu";
+      } else if (response.status === 401) {
+        errorMessage = serverMessage || "Phiên làm việc hết hạn hoặc không có quyền truy cập";
+      } else if (response.status === 0 || response.status === 500) {
         errorMessage = "Lỗi server. Vui lòng kiểm tra json-server đã chạy chưa.";
+      } else {
+        errorMessage = serverMessage || errorMessage;
+      }
 
       throw new Error(errorMessage);
     }

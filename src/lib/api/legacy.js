@@ -101,7 +101,7 @@ class ApiClient {
   }
 
   async getUser(id) {
-    return this.usersApi.getUser(id);
+    return this.usersApi.getUserById(id);
   }
 
   async createUser(userData) {

@@ -6,12 +6,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProjects } from "@/lib/hooks/useProjects";
 import { useTasks } from "@/lib/hooks/useTasks";
 import { useLogworks } from "@/lib/hooks/useLogworks";
-import { usersApi, projectMembersApi } from "@/lib/api";
+import { usersApi, projectMembersApi, projectsApi } from "@/lib/api";
 import { canAddProjectMember, isLeader } from "@/lib/utils/permissions";
 
 import EditProjectModal from "@/components/Project/Detail/EditProjectModal.jsx";
 import AddProjectMemberModal from "@/components/Project/Detail/AddProjectMemberModal.jsx";
 import CreateTaskForMemberModal from "@/components/Project/Detail/CreateTaskForMemberModal.jsx";
+import TaskDetailModal from "@/components/Task/TaskDetailModal.jsx";
+import EditTaskModal from "@/components/Task/EditTaskModal.jsx";
 
 import {
   ProjectDetailHeader,
@@ -51,6 +53,9 @@ const ProjectDetail = () => {
   const [openEdit, setOpenEdit] = useState(false);
   const [openAddMember, setOpenAddMember] = useState(false);
   const [openCreateTask, setOpenCreateTask] = useState(false);
+  const [openTaskDetail, setOpenTaskDetail] = useState(false);
+  const [openEditTask, setOpenEditTask] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   // 1) set project từ list projects
   useEffect(() => {
@@ -64,7 +69,7 @@ const ProjectDetail = () => {
     const run = async () => {
       if (!project?.userId) return;
       try {
-        const data = await usersApi.getUser(project.userId);
+        const data = await usersApi.getUserById(project.userId);
         setOwner(data);
       } catch (e) {
         console.error("Failed to fetch owner:", e);
@@ -98,7 +103,7 @@ const ProjectDetail = () => {
       setProjectMembers(safeMembers);
 
       const userIds = safeMembers.map((m) => m.userId);
-      const usersData = await Promise.all(userIds.map((uid) => usersApi.getUser(uid)));
+      const usersData = await Promise.all(userIds.map((uid) => usersApi.getUserById(uid)));
       setMemberUsers(Array.isArray(usersData) ? usersData : []);
     } catch (e) {
       console.error("Failed to fetch members:", e);
@@ -220,17 +225,10 @@ const ProjectDetail = () => {
     if (!projectId || !project) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/projects/${projectId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...project,
-          status: newStatus,
-        }),
+      const updated = await projectsApi.updateProject(projectId, {
+        ...project,
+        status: newStatus,
       });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const updated = await res.json();
 
       setProject(updated);
       return updated;
@@ -266,11 +264,7 @@ const ProjectDetail = () => {
     }
 
     try {
-      const res = await fetch(`http://localhost:3001/project_members/${memberRow.id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await projectMembersApi.deleteProjectMember(memberRow.id);
 
       message.success("Đã xóa thành viên khỏi dự án");
       await fetchMembers();
@@ -350,6 +344,10 @@ const ProjectDetail = () => {
             userMap={userMap}
             loading={tasksLoading}
             onCreateTask={handleCreateTask}
+            onTaskClick={(task) => {
+              setSelectedTask(task);
+              setOpenTaskDetail(true);
+            }}
             isCompleted={project?.status === "COMPLETED"}
           />
         </div>
@@ -395,6 +393,37 @@ const ProjectDetail = () => {
         projectMembers={projectMembers}
         userMap={userMap}
         onCreated={fetchTasks}
+      />
+
+      <TaskDetailModal
+        open={openTaskDetail}
+        onCancel={() => setOpenTaskDetail(false)}
+        task={selectedTask}
+        projects={projects}
+        logworks={logworks}
+        onStatusUpdated={async (newStatus) => {
+          await fetchTasks();
+          setSelectedTask(prev => ({ ...prev, status: newStatus }));
+        }}
+        onEdit={(task) => {
+          setSelectedTask(task);
+          setOpenTaskDetail(false);
+          setOpenEditTask(true);
+        }}
+        onDelete={() => {
+          fetchTasks();
+        }}
+        // placeholder for onOpenLogwork if needed
+        onOpenLogwork={() => { }}
+      />
+
+      <EditTaskModal
+        open={openEditTask}
+        onClose={() => setOpenEditTask(false)}
+        task={selectedTask}
+        projectMembers={projectMembers}
+        userMap={userMap}
+        onUpdated={fetchTasks}
       />
     </main>
   );

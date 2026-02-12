@@ -10,6 +10,8 @@ import {
     CheckCircleOutlined
 } from "@ant-design/icons";
 import { tasksApi } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { isLeader } from "@/lib/utils/permissions";
 
 const { Text, Title, Paragraph } = Typography;
 
@@ -21,16 +23,31 @@ const TaskDetailModal = ({
     logworks,
     onStatusUpdated,
     onOpenLogwork,
+    onEdit,
+    onDelete,
 }) => {
+    const { user } = useAuth();
     if (!task) return null;
 
     const handleStatusUpdate = async (key) => {
         try {
-            await tasksApi.updateTask(task.id, { ...task, status: key });
+            await tasksApi.updateTask(task.id, { status: key });
             onStatusUpdated?.(key);
             message.success("Cập nhật trạng thái thành công");
         } catch (e) {
             message.error("Lỗi cập nhật trạng thái");
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm("Bạn có chắc chắn muốn xóa công việc này?")) return;
+        try {
+            await tasksApi.deleteTask(task.id);
+            message.success("Xóa công việc thành công");
+            onDelete?.(task.id);
+            onCancel();
+        } catch (e) {
+            message.error("Lỗi xóa công việc");
         }
     };
 
@@ -66,21 +83,30 @@ const TaskDetailModal = ({
                         <h1 className="text-[#333] tracking-tight text-3xl font-bold leading-tight">{task.title}</h1>
                     </div>
                     <div className="flex gap-2">
-                        <Dropdown
-                            menu={{
-                                items: [
-                                    { key: "todo", label: "Cần làm" },
-                                    { key: "in-progress", label: "Đang làm" },
-                                    { key: "done", label: "Hoàn thành" },
-                                ],
-                                onClick: ({ key }) => handleStatusUpdate(key),
-                            }}
-                            trigger={["click"]}
-                        >
-                            <button className="size-10 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-[#333] hover:border-gray-300 transition-all cursor-pointer">
-                                <span className="material-symbols-outlined">more_horiz</span>
-                            </button>
-                        </Dropdown>
+                        {(isLeader(user) || String(user?.id) === String(task.userId)) && (
+                            <Dropdown
+                                menu={{
+                                    items: [
+                                        { key: "edit", label: <span className="flex items-center gap-2"><span className="material-symbols-outlined text-base">edit</span> Sửa công việc</span> },
+                                        ...(isLeader(user) ? [{ key: "delete", label: <span className="flex items-center gap-2 text-red-500"><span className="material-symbols-outlined text-base">delete</span> Xóa công việc</span> }] : []),
+                                        { type: 'divider' },
+                                        { key: "todo", label: "Cần làm" },
+                                        { key: "in-progress", label: "Đang làm" },
+                                        { key: "done", label: "Hoàn thành" },
+                                    ],
+                                    onClick: ({ key }) => {
+                                        if (key === 'edit') onEdit?.(task);
+                                        else if (key === 'delete') handleDelete();
+                                        else handleStatusUpdate(key);
+                                    },
+                                }}
+                                trigger={["click"]}
+                            >
+                                <button className="size-10 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-[#333] hover:border-gray-300 transition-all cursor-pointer">
+                                    <span className="material-symbols-outlined">more_horiz</span>
+                                </button>
+                            </Dropdown>
+                        )}
                         <button
                             onClick={onCancel}
                             className="size-10 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-[#333] hover:border-gray-300 transition-all cursor-pointer"
@@ -114,16 +140,13 @@ const TaskDetailModal = ({
                     {/* Timeline & Effort */}
                     <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 flex flex-wrap gap-8 justify-between">
                         <div className="flex flex-col gap-2">
-                            <label className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Hạn chót</label>
-                            <div className="flex items-center gap-2 text-[#333] font-bold">
-                                <span className="material-symbols-outlined text-lg">calendar_today</span>
-                                {task.dueDate ? new Date(task.dueDate).toLocaleDateString("vi-VN") : "Chưa đặt"}
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-2">
                             <label className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Ưu tiên</label>
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-pink-50 text-pink-600 border border-pink-100 w-fit">
-                                Cao
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border w-fit ${task.priority === "high" ? "bg-pink-50 text-pink-600 border-pink-100" :
+                                task.priority === "medium" ? "bg-amber-50 text-amber-600 border-amber-100" :
+                                    "bg-slate-50 text-slate-600 border-slate-100"
+                                }`}>
+                                {task.priority === "high" ? "Cao" :
+                                    task.priority === "medium" ? "Trung bình" : (task.priority === "low" ? "Thấp" : "Trung bình")}
                             </span>
                         </div>
                         <div className="flex flex-col gap-2">
@@ -186,13 +209,15 @@ const TaskDetailModal = ({
                     >
                         Đóng
                     </button>
-                    <button
-                        onClick={(e) => onOpenLogwork(task, e)}
-                        className="px-10 py-2.5 bg-primary rounded-lg text-white font-bold shadow-lg shadow-primary/25 hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-2 border-none cursor-pointer"
-                    >
-                        <span className="material-symbols-outlined text-lg">history</span>
-                        Ghi nhận giờ làm
-                    </button>
+                    {task.status !== "done" && String(user?.id) === String(task.userId) && (
+                        <button
+                            onClick={(e) => onOpenLogwork(task, e)}
+                            className="px-10 py-2.5 bg-primary rounded-lg text-white font-bold shadow-lg shadow-primary/25 hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-2 border-none cursor-pointer"
+                        >
+                            <span className="material-symbols-outlined text-lg">history</span>
+                            Ghi nhận giờ làm
+                        </button>
+                    )}
                 </div>
             </div>
 

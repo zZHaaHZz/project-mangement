@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button, Form, message, Table } from 'antd';
 import { useNavigate } from "react-router-dom";
-import { apiClient, projectMembersApi } from '@/lib/api';
+import { usersApi, projectMembersApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { isLeader } from '@/lib/utils/permissions';
 import UserModal from "@/components/User/UserModal";
@@ -32,7 +32,7 @@ const UserPage = () => {
     try {
       setLoading(true);
       const [usersData, membersData] = await Promise.all([
-        apiClient.getUsers(),
+        usersApi.getUsers(),
         projectMembersApi.getProjectMembers()
       ]);
 
@@ -65,7 +65,7 @@ const UserPage = () => {
   const handleDelete = async (userId) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa user này?")) return;
     try {
-      await apiClient.deleteUser(userId);
+      await usersApi.deleteUser(userId);
       message.success('Xóa user thành công');
       fetchData();
     } catch (error) {
@@ -167,12 +167,15 @@ const UserPage = () => {
     {
       title: <span className="text-base font-bold text-slate-500 uppercase tracking-wider">Trạng thái</span>,
       key: 'status',
-      render: (_, user) => (
-        <div className={`flex items-center gap-2 font-bold text-sm uppercase tracking-tight ${user.approved ? 'text-green-600 dark:text-green-400' : 'text-slate-400'}`}>
-          <span className={`size-2.5 rounded-full ${user.approved ? 'bg-green-500' : 'bg-slate-300'}`}></span>
-          {user.approved ? 'Active' : 'Inactive'}
-        </div>
-      )
+      render: (_, user) => {
+        const isPending = user.approved === false;
+        return (
+          <div className={`flex items-center gap-2 font-bold text-sm uppercase tracking-tight ${user.approved === true ? 'text-green-600 dark:text-green-400' : isPending ? 'text-amber-600' : 'text-slate-400'}`}>
+            <span className={`size-2.5 rounded-full ${user.approved === true ? 'bg-green-500' : isPending ? 'bg-amber-500 animate-pulse' : 'bg-slate-300'}`}></span>
+            {user.approved === true ? 'Đang hoạt động' : isPending ? 'Chờ phê duyệt' : 'Bị khóa'}
+          </div>
+        );
+      }
     },
     {
       title: <span className="text-base font-bold text-slate-500 uppercase tracking-wider text-right block pr-6">Hành động</span>,
@@ -199,6 +202,12 @@ const UserPage = () => {
         <div>
           <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Quản lý nhân viên</h2>
           <p className="text-lg text-slate-500 mt-2">Quản lý các thành viên trong nhóm và phân quyền dự án.</p>
+          {allUsers.some(u => u.approved === false) && (
+            <div className="mt-4 inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-2 rounded-lg text-sm font-bold shadow-sm animate-bounce">
+              <span className="material-symbols-outlined text-lg">notification_important</span>
+              Có nhân viên mới đang chờ bạn phê duyệt!
+            </div>
+          )}
         </div>
         <div className="flex gap-4">
           <div className="relative">

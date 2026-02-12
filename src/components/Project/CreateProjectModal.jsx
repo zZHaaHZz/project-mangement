@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Modal, Form, Input, Select, message } from "antd";
+import { projectsApi, projectMembersApi } from "@/lib/api";
 
 const { TextArea } = Input;
 
@@ -34,47 +35,30 @@ const CreateProjectModal = ({ open, onClose, onCreated, currentUserId, users = [
                 createdAt: new Date().toISOString(),
             };
 
-            const projectRes = await fetch("http://localhost:3001/projects", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(projectPayload),
-            });
-
-            if (!projectRes.ok) throw new Error(`HTTP ${projectRes.status} create project`);
-            const createdProject = await projectRes.json();
+            const createdProject = await projectsApi.createProject(projectPayload);
 
             // 2) add project_members: owner + members
             const now = new Date().toISOString();
             const selectedMemberIds = values.memberIds || [];
 
             const requests = [
-                fetch("http://localhost:3001/project_members", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        projectId: createdProject.id,
-                        userId: Number(currentUserId),
-                        role: "owner",
-                        createdAt: now,
-                    }),
+                projectMembersApi.createProjectMember({
+                    projectId: createdProject.id,
+                    userId: Number(currentUserId),
+                    role: "owner",
+                    createdAt: now,
                 }),
                 ...selectedMemberIds.map((uid) =>
-                    fetch("http://localhost:3001/project_members", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            projectId: createdProject.id,
-                            userId: Number(uid),
-                            role: "member",
-                            createdAt: now,
-                        }),
+                    projectMembersApi.createProjectMember({
+                        projectId: createdProject.id,
+                        userId: Number(uid),
+                        role: "member",
+                        createdAt: now,
                     })
                 ),
             ];
 
-            const results = await Promise.all(requests);
-            const failed = results.find((r) => !r.ok);
-            if (failed) throw new Error(`HTTP ${failed.status} add members`);
+            await Promise.all(requests);
 
             message.success("Tạo project thành công");
             onCreated?.(createdProject);
